@@ -407,9 +407,9 @@ export default function ExamDetail() {
     <DashboardLayout>
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/patients/${patient.id}`)} className="mb-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/patient/${patient.id}`)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar à Lista de Doentes
+          Voltar à Ficha do Doente
         </Button>
         
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
