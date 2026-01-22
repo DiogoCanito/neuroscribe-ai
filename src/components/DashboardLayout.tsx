@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import unilabsLogo from "@/assets/unilabs-logo.svg";
+import { UnilabsLogo } from "@/components/UnilabsLogo";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -65,8 +65,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
-              <img src={unilabsLogo} alt="Unilabs" className="w-8 h-8 object-contain" />
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg">
+              <UnilabsLogo size={28} />
             </div>
             <div>
               <h1 className="font-semibold text-sidebar-foreground">Unilabs</h1>
@@ -149,7 +149,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <img src={unilabsLogo} alt="Unilabs" className="w-6 h-6 object-contain" />
+              <UnilabsLogo size={24} />
               <span className="font-semibold">Unilabs</span>
             </div>
             <div className="w-10" /> {/* Spacer */}
