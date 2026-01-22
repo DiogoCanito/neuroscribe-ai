@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Brain, 
   LayoutDashboard, 
   Users, 
   FileText, 
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import unilabsLogo from "@/assets/unilabs-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -65,11 +65,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-            <div className="w-10 h-10 rounded-xl bg-gradient-medical flex items-center justify-center shadow-lg">
-              <Brain className="w-6 h-6 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
+              <img src={unilabsLogo} alt="Unilabs" className="w-8 h-8 object-contain" />
             </div>
             <div>
-              <h1 className="font-semibold text-sidebar-foreground">NeuroClinic</h1>
+              <h1 className="font-semibold text-sidebar-foreground">Unilabs</h1>
               <p className="text-xs text-sidebar-foreground/60">Sistema Clínico</p>
             </div>
           </div>
@@ -149,8 +149,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <Brain className="w-6 h-6 text-primary" />
-              <span className="font-semibold">NeuroClinic</span>
+              <img src={unilabsLogo} alt="Unilabs" className="w-6 h-6 object-contain" />
+              <span className="font-semibold">Unilabs</span>
             </div>
             <div className="w-10" /> {/* Spacer */}
           </div>
