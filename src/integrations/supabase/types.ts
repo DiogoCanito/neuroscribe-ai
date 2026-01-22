@@ -25,6 +25,7 @@ export type Database = {
           notes: string | null
           patient_id: string
           report_id: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           notes?: string | null
           patient_id: string
           report_id?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -49,6 +51,7 @@ export type Database = {
           notes?: string | null
           patient_id?: string
           report_id?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
