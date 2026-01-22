@@ -8,6 +8,10 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Patients from "./pages/Patients";
+import PatientProfile from "./pages/PatientProfile";
+import Exams from "./pages/Exams";
+import ExamDetail from "./pages/ExamDetail";
+import NewReport from "./pages/NewReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,9 +27,10 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/new-report" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/exams" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/patient/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
+            <Route path="/exams" element={<ProtectedRoute><Exams /></ProtectedRoute>} />
+            <Route path="/exam/:id" element={<ProtectedRoute><ExamDetail /></ProtectedRoute>} />
+            <Route path="/new-report" element={<ProtectedRoute><NewReport /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
