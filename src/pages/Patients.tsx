@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,8 @@ import {
   MoreVertical,
   Edit,
   Archive,
-  Loader2
+  Loader2,
+  ChevronRight
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -34,6 +36,7 @@ interface Patient {
 }
 
 export default function Patients() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -289,15 +292,19 @@ export default function Patients() {
       ) : filteredPatients.length > 0 ? (
         <div className="space-y-3">
           {filteredPatients.map((patient) => (
-            <Card key={patient.id} className="card-medical hover:border-primary/30 transition-all">
+            <Card 
+              key={patient.id} 
+              className="card-medical hover:border-primary/30 transition-all cursor-pointer group"
+              onClick={() => navigate(`/patients/${patient.id}`)}
+            >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 flex-1">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <Users className="w-6 h-6 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{patient.name}</h3>
                       <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
                         {patient.process_number && (
                           <span className="flex items-center gap-1">
@@ -320,23 +327,26 @@ export default function Patients() {
                       )}
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(patient)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleArchive(patient)} className="text-destructive">
-                        <Archive className="w-4 h-4 mr-2" />
-                        Arquivar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(patient); }}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleArchive(patient); }} className="text-destructive">
+                          <Archive className="w-4 h-4 mr-2" />
+                          Arquivar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </CardContent>
             </Card>
