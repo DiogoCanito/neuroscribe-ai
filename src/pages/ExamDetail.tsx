@@ -22,7 +22,9 @@ import {
   Loader2,
   X,
   Save,
-  Trash2
+  Trash2,
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 
 interface Exam {
@@ -33,6 +35,7 @@ interface Exam {
   file_name: string;
   file_url: string;
   report_id: string | null;
+  status: string;
 }
 
 interface Patient {
@@ -80,6 +83,7 @@ export default function ExamDetail() {
     exam_type: "",
     exam_date: "",
     notes: "",
+    status: "pending",
   });
 
   const [reportFormData, setReportFormData] = useState({
@@ -109,11 +113,12 @@ export default function ExamDetail() {
         .single();
 
       if (examError) throw examError;
-      setExam(examData);
+      setExam({ ...examData, status: (examData as any).status || 'pending' });
       setExamFormData({
         exam_type: examData.exam_type,
         exam_date: examData.exam_date || "",
         notes: examData.notes || "",
+        status: (examData as any).status || "pending",
       });
 
       // Load patient
@@ -239,20 +244,46 @@ export default function ExamDetail() {
   const handleSaveExam = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('medical_exams')
         .update({
           exam_type: examFormData.exam_type,
           exam_date: examFormData.exam_date || null,
           notes: examFormData.notes || null,
-        })
-        .eq('id', id);
+          status: examFormData.status,
+        } as any)
+        .eq('id', id));
 
       if (error) throw error;
+      setExam(prev => prev ? { ...prev, status: examFormData.status } : prev);
       toast({ title: "Sucesso", description: "Exame atualizado" });
     } catch (error) {
       console.error('Error saving exam:', error);
       toast({ variant: "destructive", title: "Erro", description: "Erro ao guardar exame" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    setSaving(true);
+    try {
+      const newStatus = examFormData.status === 'completed' ? 'pending' : 'completed';
+      const { error } = await (supabase
+        .from('medical_exams')
+        .update({ status: newStatus } as any)
+        .eq('id', id));
+
+      if (error) throw error;
+      setExamFormData(prev => ({ ...prev, status: newStatus }));
+      setExam(prev => prev ? { ...prev, status: newStatus } : prev);
+      toast({ 
+        title: "Sucesso", 
+        description: newStatus === 'completed' ? "Exame marcado como concluído" : "Exame revertido para pendente" 
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao atualizar estado" });
     } finally {
       setSaving(false);
     }
@@ -387,6 +418,17 @@ export default function ExamDetail() {
               <span className="px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-lg">
                 {getExamTypeLabel(exam.exam_type)}
               </span>
+              {exam.status === 'completed' ? (
+                <span className="flex items-center gap-1 px-2 py-1 bg-success/10 text-success text-xs font-medium rounded-full">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Concluído
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded-full">
+                  <Clock className="w-3 h-3" />
+                  Pendente
+                </span>
+              )}
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
               Exame de {patient.name}
@@ -435,10 +477,31 @@ export default function ExamDetail() {
                   className="h-9"
                 />
               </div>
-              <Button onClick={handleSaveExam} disabled={saving} size="sm" className="w-full">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Guardar
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveExam} disabled={saving} size="sm" className="flex-1">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Guardar
+                </Button>
+                <Button 
+                  onClick={handleMarkCompleted} 
+                  disabled={saving} 
+                  size="sm" 
+                  variant={exam.status === 'completed' ? 'outline' : 'default'}
+                  className={exam.status === 'completed' ? '' : 'bg-success hover:bg-success/90'}
+                >
+                  {exam.status === 'completed' ? (
+                    <>
+                      <Clock className="w-4 h-4 mr-1" />
+                      Pendente
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                      Concluir
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
