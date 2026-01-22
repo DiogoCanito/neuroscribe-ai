@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import unilabsLogo from "@/assets/unilabs-logo.png";
+import unilabsLogo from "@/assets/unilabs-logo.svg";
 
 interface DashboardLayoutProps {
   children: ReactNode;
