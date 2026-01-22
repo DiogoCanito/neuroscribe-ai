@@ -25,9 +25,8 @@ interface DashboardLayoutProps {
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Doentes", icon: Users },
-  { href: "/reports", label: "Relatórios", icon: FileText },
-  { href: "/new-report", label: "Novo Relatório", icon: Mic },
   { href: "/exams", label: "Exames", icon: Image },
+  { href: "/new-report", label: "Novo Exame", icon: Mic },
   { href: "/search", label: "Pesquisa", icon: Search },
 ];
 
