@@ -9,9 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VoiceDictation } from "@/components/VoiceDictation";
+import { DocumentsList } from "@/components/DocumentsList";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { generateReportPDF } from "@/lib/pdfGenerator";
 import { 
   ArrowLeft, 
   User, 
@@ -24,7 +26,8 @@ import {
   Save,
   Trash2,
   CheckCircle2,
-  Clock
+  Clock,
+  FileDown
 } from "lucide-react";
 
 interface Exam {
@@ -96,6 +99,10 @@ export default function ExamDetail() {
     observations: "",
   });
 
+  // Store original transcription separately (read-only)
+  const [originalTranscription, setOriginalTranscription] = useState("");
+  const [documentsKey, setDocumentsKey] = useState(0);
+
   useEffect(() => {
     if (user && id) {
       loadExamData();
@@ -141,6 +148,7 @@ export default function ExamDetail() {
 
         if (reportData) {
           setReport(reportData);
+          setOriginalTranscription(reportData.transcription || "");
           setReportFormData({
             transcription: reportData.transcription || "",
             consultation_reason: reportData.consultation_reason || "",
@@ -291,13 +299,15 @@ export default function ExamDetail() {
 
   const handleSaveReport = async () => {
     setSaving(true);
+    let currentReportId: string | null = report?.id || null;
+    
     try {
       if (report) {
         // Update existing report
         const { error } = await supabase
           .from('reports')
           .update({
-            transcription: reportFormData.transcription || null,
+            transcription: originalTranscription || null,
             consultation_reason: reportFormData.consultation_reason || null,
             neurological_exam: reportFormData.neurological_exam || null,
             complementary_exams: reportFormData.complementary_exams || null,
@@ -308,6 +318,7 @@ export default function ExamDetail() {
           .eq('id', report.id);
 
         if (error) throw error;
+        currentReportId = report.id;
       } else {
         // Create new report
         const { data: newReport, error: reportError } = await supabase
@@ -316,7 +327,7 @@ export default function ExamDetail() {
             user_id: user!.id,
             patient_id: patient!.id,
             title: `Relatório - ${getExamTypeLabel(exam!.exam_type)} - ${formatDate(exam!.exam_date)}`,
-            transcription: reportFormData.transcription || null,
+            transcription: originalTranscription || null,
             consultation_reason: reportFormData.consultation_reason || null,
             neurological_exam: reportFormData.neurological_exam || null,
             complementary_exams: reportFormData.complementary_exams || null,
@@ -339,9 +350,70 @@ export default function ExamDetail() {
         if (examUpdateError) throw examUpdateError;
 
         setReport(newReport);
+        currentReportId = newReport.id;
       }
 
-      toast({ title: "Sucesso", description: "Relatório guardado" });
+      // Generate PDF
+      const pdfBlob = generateReportPDF({
+        patient: {
+          name: patient!.name,
+          dateOfBirth: patient!.date_of_birth,
+          processNumber: undefined
+        },
+        exam: {
+          type: getExamTypeLabel(exam!.exam_type),
+          date: exam!.exam_date
+        },
+        report: {
+          transcription: originalTranscription,
+          consultationReason: reportFormData.consultation_reason,
+          neurologicalExam: reportFormData.neurological_exam,
+          complementaryExams: reportFormData.complementary_exams,
+          diagnosis: reportFormData.diagnosis,
+          therapeuticPlan: reportFormData.therapeutic_plan,
+          observations: reportFormData.observations
+        }
+      });
+
+      // Upload PDF to storage
+      const timestamp = Date.now();
+      const fileName = `relatorio_${getExamTypeLabel(exam!.exam_type)}_${formatDate(exam!.exam_date).replace(/\//g, '-')}_${timestamp}.pdf`;
+      const filePath = `${user!.id}/documents/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('medical-files')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf'
+        });
+
+      if (uploadError) {
+        console.error('Error uploading PDF:', uploadError);
+        throw uploadError;
+      }
+
+      // Save document reference in database
+      const { error: docError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user!.id,
+          patient_id: patient!.id,
+          exam_id: id,
+          report_id: currentReportId,
+          title: `Relatório - ${getExamTypeLabel(exam!.exam_type)} - ${formatDate(exam!.exam_date)}`,
+          file_name: fileName,
+          file_path: filePath,
+          document_type: 'report_pdf'
+        });
+
+      if (docError) {
+        console.error('Error saving document reference:', docError);
+        throw docError;
+      }
+
+      // Refresh documents list
+      setDocumentsKey(prev => prev + 1);
+
+      toast({ title: "Sucesso", description: "Relatório guardado e PDF gerado" });
     } catch (error) {
       console.error('Error saving report:', error);
       toast({ variant: "destructive", title: "Erro", description: "Erro ao guardar relatório" });
@@ -350,9 +422,12 @@ export default function ExamDetail() {
     }
   };
 
-  const handleReportGenerated = (generatedReport: any) => {
+  const handleReportGenerated = (generatedReport: any, transcription: string) => {
+    // Store original transcription (read-only)
+    setOriginalTranscription(transcription);
     setReportFormData({
       ...reportFormData,
+      transcription: transcription,
       consultation_reason: generatedReport.consultation_reason || "",
       neurological_exam: generatedReport.exam_findings || "",
       diagnosis: generatedReport.diagnosis || "",
@@ -610,96 +685,118 @@ export default function ExamDetail() {
 
         {/* Report Tab */}
         <TabsContent value="report">
-          <Card className="card-medical">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Relatório Clínico</CardTitle>
+          <div className="space-y-6">
+            {/* Original Transcription - Read Only */}
+            {originalTranscription && (
+              <Card className="card-medical border-muted">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    Transcrição Original
+                  </CardTitle>
                   <CardDescription>
-                    {report ? `Estado: ${report.status === 'draft' ? 'Rascunho' : report.status}` : 'Novo relatório'}
+                    Texto bruto resultante da transcrição do áudio (apenas leitura)
                   </CardDescription>
-                </div>
-                <Button onClick={handleSaveReport} disabled={saving}>
-                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                  Guardar Relatório
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Transcrição Original</Label>
-                <Textarea
-                  value={reportFormData.transcription}
-                  onChange={(e) => setReportFormData({ ...reportFormData, transcription: e.target.value })}
-                  rows={3}
-                  placeholder="Transcrição do ditado..."
-                  className="text-sm"
-                />
-              </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/30 rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap">
+                    {originalTranscription}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Motivo da Consulta/Exame</Label>
-                  <Textarea
-                    value={reportFormData.consultation_reason}
-                    onChange={(e) => setReportFormData({ ...reportFormData, consultation_reason: e.target.value })}
-                    rows={4}
-                    placeholder="Motivo que levou à realização do exame..."
-                  />
+            {/* Structured Report - Editable */}
+            <Card className="card-medical">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Relatório Clínico Estruturado</CardTitle>
+                    <CardDescription>
+                      {report ? `Estado: ${report.status === 'draft' ? 'Rascunho' : report.status}` : 'Novo relatório'}
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleSaveReport} disabled={saving} className="gap-2">
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <FileDown className="w-4 h-4" />
+                      </>
+                    )}
+                    Guardar e Gerar PDF
+                  </Button>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Motivo da Consulta/Exame</Label>
+                    <Textarea
+                      value={reportFormData.consultation_reason}
+                      onChange={(e) => setReportFormData({ ...reportFormData, consultation_reason: e.target.value })}
+                      rows={4}
+                      placeholder="Motivo que levou à realização do exame..."
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Achados do Exame Neurológico</Label>
-                  <Textarea
-                    value={reportFormData.neurological_exam}
-                    onChange={(e) => setReportFormData({ ...reportFormData, neurological_exam: e.target.value })}
-                    rows={4}
-                    placeholder="Resultados e achados..."
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Achados do Exame Neurológico</Label>
+                    <Textarea
+                      value={reportFormData.neurological_exam}
+                      onChange={(e) => setReportFormData({ ...reportFormData, neurological_exam: e.target.value })}
+                      rows={4}
+                      placeholder="Resultados e achados..."
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Exames Complementares</Label>
-                  <Textarea
-                    value={reportFormData.complementary_exams}
-                    onChange={(e) => setReportFormData({ ...reportFormData, complementary_exams: e.target.value })}
-                    rows={4}
-                    placeholder="Outros exames realizados..."
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Exames Complementares</Label>
+                    <Textarea
+                      value={reportFormData.complementary_exams}
+                      onChange={(e) => setReportFormData({ ...reportFormData, complementary_exams: e.target.value })}
+                      rows={4}
+                      placeholder="Outros exames realizados..."
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Diagnóstico/Impressão</Label>
-                  <Textarea
-                    value={reportFormData.diagnosis}
-                    onChange={(e) => setReportFormData({ ...reportFormData, diagnosis: e.target.value })}
-                    rows={4}
-                    placeholder="Diagnóstico ou impressão clínica..."
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Diagnóstico/Impressão</Label>
+                    <Textarea
+                      value={reportFormData.diagnosis}
+                      onChange={(e) => setReportFormData({ ...reportFormData, diagnosis: e.target.value })}
+                      rows={4}
+                      placeholder="Diagnóstico ou impressão clínica..."
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Plano Terapêutico</Label>
-                  <Textarea
-                    value={reportFormData.therapeutic_plan}
-                    onChange={(e) => setReportFormData({ ...reportFormData, therapeutic_plan: e.target.value })}
-                    rows={4}
-                    placeholder="Recomendações e tratamento..."
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Plano Terapêutico</Label>
+                    <Textarea
+                      value={reportFormData.therapeutic_plan}
+                      onChange={(e) => setReportFormData({ ...reportFormData, therapeutic_plan: e.target.value })}
+                      rows={4}
+                      placeholder="Recomendações e tratamento..."
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Observações</Label>
-                  <Textarea
-                    value={reportFormData.observations}
-                    onChange={(e) => setReportFormData({ ...reportFormData, observations: e.target.value })}
-                    rows={4}
-                    placeholder="Notas adicionais..."
-                  />
+                  <div className="space-y-2">
+                    <Label>Observações</Label>
+                    <Textarea
+                      value={reportFormData.observations}
+                      onChange={(e) => setReportFormData({ ...reportFormData, observations: e.target.value })}
+                      rows={4}
+                      placeholder="Notas adicionais..."
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Documents Section */}
+            <DocumentsList key={documentsKey} examId={id} />
+          </div>
         </TabsContent>
       </Tabs>
     </DashboardLayout>
