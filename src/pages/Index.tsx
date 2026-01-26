@@ -305,7 +305,7 @@ export default function Dashboard() {
               {stats.recentExams.map((exam) => (
                 <Link
                   key={exam.id}
-                  to={`/exams/${exam.id}`}
+                  to={`/exam/${exam.id}`}
                   className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-all group"
                 >
                   <div className="flex items-center gap-3">
