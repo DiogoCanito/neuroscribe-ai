@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          exam_id: string | null
+          file_name: string
+          file_path: string
+          id: string
+          patient_id: string
+          report_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          exam_id?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          patient_id: string
+          report_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          exam_id?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          patient_id?: string
+          report_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_exams: {
         Row: {
           created_at: string

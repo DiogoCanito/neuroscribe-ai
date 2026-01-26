@@ -33,7 +33,7 @@ interface StructuredReport {
 interface VoiceDictationProps {
   patientInfo: PatientInfo;
   examType: string;
-  onReportGenerated: (report: StructuredReport) => void;
+  onReportGenerated: (report: StructuredReport, transcription: string) => void;
   existingTranscription?: string;
 }
 
@@ -171,7 +171,7 @@ export function VoiceDictation({
 
       if (error) throw error;
       
-      onReportGenerated(data);
+      onReportGenerated(data, transcription);
       toast({
         title: "Sucesso",
         description: "Relatório estruturado gerado com sucesso"
