@@ -92,7 +92,7 @@ export default function NewReport() {
       
       toast({ title: "Sucesso", description: "Doente criado com sucesso" });
       setIsNewPatientDialogOpen(false);
-      navigate(`/patient/${data.id}`);
+      navigate(`/patients/${data.id}`);
     } catch (error) {
       console.error('Error creating patient:', error);
       toast({ variant: "destructive", title: "Erro", description: "Erro ao criar doente" });
@@ -102,7 +102,7 @@ export default function NewReport() {
   };
 
   const handleSelectPatient = (patientId: string) => {
-    navigate(`/patient/${patientId}`);
+    navigate(`/patients/${patientId}`);
   };
 
   const filteredPatients = patients.filter(
