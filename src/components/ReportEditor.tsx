@@ -103,52 +103,53 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
   }, {} as Record<string, typeof frequentTerms>);
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/30">
+      <div className="shrink-0 flex items-center gap-2 p-2 border-b border-border bg-muted/30">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowFindReplace(!showFindReplace)}
-          className="gap-1.5"
+          className="gap-1.5 h-7 text-xs"
         >
-          <Search className="w-4 h-4" />
+          <Search className="w-3.5 h-3.5" />
           Localizar
         </Button>
         
         <div className="h-4 w-px bg-border" />
         
-        <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-1.5">
-          <Copy className="w-4 h-4" />
+        <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-1.5 h-7 text-xs">
+          <Copy className="w-3.5 h-3.5" />
           Copiar
         </Button>
         
-        <Button variant="ghost" size="sm" onClick={onExportPDF} className="gap-1.5">
-          <FileDown className="w-4 h-4" />
+        <Button variant="ghost" size="sm" onClick={onExportPDF} className="gap-1.5 h-7 text-xs">
+          <FileDown className="w-3.5 h-3.5" />
           PDF
         </Button>
       </div>
 
       {/* Find & Replace Bar */}
       {showFindReplace && (
-        <div className="flex items-center gap-2 p-2 border-b border-border bg-muted/20">
+        <div className="shrink-0 flex items-center gap-2 p-2 border-b border-border bg-muted/20">
           <Input
             placeholder="Localizar..."
             value={findText}
             onChange={(e) => setFindText(e.target.value)}
-            className="w-40 h-8 text-sm"
+            className="w-32 h-7 text-xs"
           />
           <Input
-            placeholder="Substituir por..."
+            placeholder="Substituir..."
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
-            className="w-40 h-8 text-sm"
+            className="w-32 h-7 text-xs"
           />
           <Button 
             variant="secondary" 
             size="sm" 
             onClick={() => handleFindReplace(false)}
             disabled={!findText}
+            className="h-7 text-xs"
           >
             Substituir
           </Button>
@@ -157,24 +158,25 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
             size="sm" 
             onClick={() => handleFindReplace(true)}
             disabled={!findText}
+            className="h-7 text-xs"
           >
-            Substituir Tudo
+            Tudo
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-7 w-7"
             onClick={() => setShowFindReplace(false)}
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       )}
 
       {/* Main content area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Editor */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-3 min-h-0 overflow-hidden">
           <Textarea
             ref={textareaRef}
             value={reportContent}
@@ -183,33 +185,33 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
               ? "O relatório será apresentado aqui. Comece a gravar para adicionar conteúdo."
               : "Selecione um template para começar..."
             }
-            className="h-full resize-none font-mono text-sm leading-relaxed"
+            className="h-full w-full resize-none font-mono text-sm leading-relaxed overflow-auto"
             disabled={!selectedTemplate}
           />
         </div>
 
         {/* Frequent Terms Sidebar */}
-        <div className="w-56 border-l border-border bg-muted/20 flex flex-col">
+        <div className="w-48 shrink-0 border-l border-border bg-muted/20 flex flex-col min-h-0 overflow-hidden">
           <Collapsible open={termsOpen} onOpenChange={setTermsOpen}>
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between p-3 rounded-none border-b border-border"
+                className="w-full justify-between p-2 rounded-none border-b border-border h-auto"
               >
-                <span className="text-sm font-medium">Termos Frequentes</span>
+                <span className="text-xs font-medium">Termos Frequentes</span>
                 {termsOpen ? (
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-3.5 h-3.5" />
                 ) : (
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-3.5 h-3.5" />
                 )}
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent>
-              <ScrollArea className="h-[calc(100vh-300px)]">
-                <div className="p-2 space-y-3">
+            <CollapsibleContent className="flex-1 min-h-0 overflow-hidden">
+              <ScrollArea className="h-full max-h-[calc(100vh-400px)]">
+                <div className="p-2 space-y-2">
                   {Object.entries(termsByCategory).map(([category, terms]) => (
                     <div key={category}>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 mb-1">
                         {category}
                       </p>
                       <div className="space-y-0.5">
@@ -219,7 +221,7 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
                             onClick={() => handleInsertTerm(term.term)}
                             disabled={!selectedTemplate}
                             className={cn(
-                              "w-full text-left px-2 py-1.5 text-xs rounded transition-colors",
+                              "w-full text-left px-2 py-1 text-[11px] rounded transition-colors",
                               selectedTemplate 
                                 ? "hover:bg-accent/50 cursor-pointer" 
                                 : "opacity-50 cursor-not-allowed"

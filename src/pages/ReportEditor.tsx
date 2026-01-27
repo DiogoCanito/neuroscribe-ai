@@ -105,27 +105,27 @@ export default function ReportEditorPage() {
   }, [resetEditor, toast]);
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
+      <header className="h-12 shrink-0 border-b border-border bg-card flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-primary">
-            <FileText className="w-6 h-6" />
-            <span className="font-semibold text-lg">MedReport</span>
+            <FileText className="w-5 h-5" />
+            <span className="font-semibold">MedReport</span>
           </div>
           
           {selectedTemplate && (
             <div className="flex items-center gap-2 ml-4">
-              <span className="text-muted-foreground text-sm">Template:</span>
+              <span className="text-muted-foreground text-xs">Template:</span>
               <span className="font-medium text-sm">{selectedTemplate.name}</span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <VoiceCommandsToggle />
           
-          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5 h-8">
             <RotateCcw className="w-4 h-4" />
             Limpar
           </Button>
@@ -133,34 +133,36 @@ export default function ReportEditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         {/* Template Sidebar */}
         <TemplateSidebar onTemplateSelect={handleTemplateSelect} />
 
         {/* Editor Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Recording Controls + Tools */}
-          <div className="p-4 border-b border-border bg-card space-y-4">
+          <div className="shrink-0 p-3 border-b border-border bg-card space-y-3">
             {/* Recording and Upload Row */}
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <div className="flex-1">
                 <RecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
               </div>
-              <div className="w-72">
+              <div className="w-64 shrink-0">
                 <AudioUpload onTranscriptionComplete={handleTranscriptionUpdate} />
               </div>
             </div>
             
             {/* Text Tools Row */}
             <div className="flex items-center gap-3 pt-2 border-t border-border/50">
-              <span className="text-sm text-muted-foreground">Ferramentas:</span>
+              <span className="text-xs text-muted-foreground">Ferramentas:</span>
               <TextManipulationDialog />
               <AutoTextDialog />
             </div>
           </div>
 
           {/* Report Editor */}
-          <ReportEditor onExportPDF={handleExportPDF} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ReportEditor onExportPDF={handleExportPDF} />
+          </div>
         </div>
       </div>
     </div>
