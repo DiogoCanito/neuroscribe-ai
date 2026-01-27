@@ -105,7 +105,7 @@ export function generateReportPDF(options: GeneratePDFOptions): Blob {
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('IDENTIFICAÇÃO DO DOENTE', margin + 5, y + 3);
+  doc.text('IDENTIFICAÇÃO DO PACIENTE', margin + 5, y + 3);
   
   doc.setFont('helvetica', 'normal');
   doc.text(`Nome: ${patient.name}`, margin + 5, y + 12);

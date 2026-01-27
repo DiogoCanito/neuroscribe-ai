@@ -70,7 +70,7 @@ export default function Patients() {
       setPatients(data || []);
     } catch (error) {
       console.error('Error loading patients:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar doentes" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar pacientes" });
     } finally {
       setLoading(false);
     }
@@ -94,7 +94,7 @@ export default function Patients() {
           .eq('id', editingPatient.id);
 
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Doente atualizado com sucesso" });
+        toast({ title: "Sucesso", description: "Paciente atualizado com sucesso" });
       } else {
         const { error } = await supabase
           .from('patients')
@@ -108,7 +108,7 @@ export default function Patients() {
           });
 
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Doente adicionado com sucesso" });
+        toast({ title: "Sucesso", description: "Paciente adicionado com sucesso" });
       }
 
       setIsDialogOpen(false);
@@ -116,7 +116,7 @@ export default function Patients() {
       loadPatients();
     } catch (error) {
       console.error('Error saving patient:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao guardar doente" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao guardar paciente" });
     } finally {
       setSaving(false);
     }
@@ -130,11 +130,11 @@ export default function Patients() {
         .eq('id', patient.id);
 
       if (error) throw error;
-      toast({ title: "Sucesso", description: "Doente arquivado" });
+      toast({ title: "Sucesso", description: "Paciente arquivado" });
       loadPatients();
     } catch (error) {
       console.error('Error archiving patient:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao arquivar doente" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao arquivar paciente" });
     }
   };
 
@@ -189,21 +189,21 @@ export default function Patients() {
     <DashboardLayout>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Doentes</h1>
-          <p className="text-muted-foreground">Gestão de registos de doentes</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Pacientes</h1>
+          <p className="text-muted-foreground">Gestão de registos de pacientes</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Novo Doente
+              Novo Paciente
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{editingPatient ? "Editar Doente" : "Novo Doente"}</DialogTitle>
+              <DialogTitle>{editingPatient ? "Editar Paciente" : "Novo Paciente"}</DialogTitle>
               <DialogDescription>
-                {editingPatient ? "Atualize os dados do doente" : "Preencha os dados do novo doente"}
+                {editingPatient ? "Atualize os dados do paciente" : "Preencha os dados do novo paciente"}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -357,12 +357,12 @@ export default function Patients() {
           <CardContent className="py-12 text-center">
             <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-muted-foreground">
-              {searchTerm ? "Nenhum doente encontrado" : "Nenhum doente registado"}
+              {searchTerm ? "Nenhum paciente encontrado" : "Nenhum paciente registado"}
             </p>
             {!searchTerm && (
               <Button variant="outline" size="sm" className="mt-3" onClick={() => setIsDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Adicionar primeiro doente
+                Adicionar primeiro paciente
               </Button>
             )}
           </CardContent>

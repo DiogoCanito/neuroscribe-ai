@@ -13,7 +13,9 @@ import {
   Calendar, 
   User,
   ArrowRight,
-  Plus
+  Plus,
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 
 interface Exam {
@@ -22,6 +24,7 @@ interface Exam {
   exam_date: string | null;
   notes: string | null;
   created_at: string;
+  status: string;
   patient: {
     id: string;
     name: string;
@@ -49,6 +52,7 @@ export default function Exams() {
           exam_date,
           notes,
           created_at,
+          status,
           patient_id
         `)
         .eq('user_id', user!.id)
@@ -67,6 +71,7 @@ export default function Exams() {
       
       const examsWithPatients = data?.map(exam => ({
         ...exam,
+        status: (exam as any).status || 'pending',
         patient: patientMap.get(exam.patient_id) || { id: exam.patient_id, name: 'Desconhecido' }
       })) || [];
 
@@ -105,12 +110,29 @@ export default function Exams() {
     return types[type.toLowerCase()] || type;
   };
 
+  const getStatusBadge = (status: string) => {
+    if (status === 'completed') {
+      return (
+        <span className="flex items-center gap-1 px-2 py-1 bg-success/10 text-success text-xs font-medium rounded-full">
+          <CheckCircle2 className="w-3 h-3" />
+          Concluído
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1 px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded-full">
+        <Clock className="w-3 h-3" />
+        Pendente
+      </span>
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Exames</h1>
-          <p className="text-muted-foreground">Lista de exames por doente</p>
+          <p className="text-muted-foreground">Lista de exames por paciente</p>
         </div>
         <Link to="/new-report">
           <Button className="gap-2">
@@ -126,7 +148,7 @@ export default function Exams() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Pesquisar por nome do doente ou tipo de exame..."
+              placeholder="Pesquisar por nome do paciente ou tipo de exame..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -158,6 +180,7 @@ export default function Exams() {
                           <span className="px-2 py-0.5 bg-accent/10 text-accent text-xs font-medium rounded">
                             {getExamTypeLabel(exam.exam_type)}
                           </span>
+                          {getStatusBadge(exam.status)}
                         </div>
                         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                           <User className="w-4 h-4" />

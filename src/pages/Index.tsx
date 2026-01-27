@@ -186,7 +186,7 @@ export default function Dashboard() {
                 <Plus className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <p className="font-semibold text-foreground">Novo Doente</p>
+                <p className="font-semibold text-foreground">Novo Paciente</p>
                 <p className="text-sm text-muted-foreground">Adicionar registo</p>
               </div>
             </CardContent>
@@ -214,7 +214,7 @@ export default function Dashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Doentes</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Pacientes</p>
                 <p className="text-3xl font-bold text-foreground mt-1">
                   {loading ? '-' : stats.totalPatients}
                 </p>
@@ -223,7 +223,7 @@ export default function Dashboard() {
                 <Users className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">Doentes ativos</p>
+            <p className="text-xs text-muted-foreground mt-3">Pacientes ativos</p>
           </CardContent>
         </Card>
 

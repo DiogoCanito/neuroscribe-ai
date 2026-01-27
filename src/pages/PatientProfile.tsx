@@ -122,7 +122,7 @@ export default function PatientProfile() {
       setExams(examsWithDetails);
     } catch (error) {
       console.error('Error loading patient:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar dados do doente" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar dados do paciente" });
       navigate('/patients');
     } finally {
       setLoading(false);
@@ -146,12 +146,12 @@ export default function PatientProfile() {
         .eq('id', id);
 
       if (error) throw error;
-      toast({ title: "Sucesso", description: "Doente atualizado com sucesso" });
+      toast({ title: "Sucesso", description: "Paciente atualizado com sucesso" });
       setIsEditDialogOpen(false);
       loadPatientData();
     } catch (error) {
       console.error('Error updating patient:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao atualizar doente" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao atualizar paciente" });
     } finally {
       setSaving(false);
     }
@@ -233,9 +233,9 @@ export default function PatientProfile() {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Doente não encontrado</p>
+          <p className="text-muted-foreground">Paciente não encontrado</p>
           <Link to="/patients">
-            <Button variant="outline" className="mt-4">Voltar aos Doentes</Button>
+            <Button variant="outline" className="mt-4">Voltar aos Pacientes</Button>
           </Link>
         </div>
       </DashboardLayout>
@@ -283,8 +283,8 @@ export default function PatientProfile() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>Editar Doente</DialogTitle>
-                <DialogDescription>Atualize os dados do doente</DialogDescription>
+                <DialogTitle>Editar Paciente</DialogTitle>
+                <DialogDescription>Atualize os dados do paciente</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -466,7 +466,7 @@ export default function PatientProfile() {
         <Card className="card-medical">
           <CardContent className="py-12 text-center">
             <ImageIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">Nenhum exame registado para este doente</p>
+            <p className="text-muted-foreground">Nenhum exame registado para este paciente</p>
             <Button variant="outline" size="sm" className="mt-3" onClick={() => setIsNewExamDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Criar primeiro exame
