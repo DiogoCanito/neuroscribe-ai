@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { transcription, templateName, templateBaseText, patientInfo, examType } = await req.json();
+    const { transcription, templateName, templateBaseText } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -22,43 +22,67 @@ serve(async (req) => {
       throw new Error("Transcription is required");
     }
 
-    const systemPrompt = `És um radiologista experiente. Gera relatórios médicos a partir de ditados usando um template como guia de estrutura.
+    const systemPrompt = `És um radiologista experiente a gerar relatórios médicos estruturados.
 
-TEMPLATE (guia de estrutura e frases padrão):
+TEMPLATE DE REFERÊNCIA:
 ${templateBaseText || 'Sem template específico'}
 
-LÓGICA FUNDAMENTAL:
-1. O template define a ORDEM e ESTRUTURA do relatório
-2. Frases entre colchetes [...] são as frases NORMAIS/PADRÃO para quando não há achados
-3. Se o médico NÃO MENCIONA uma estrutura/região → está NORMAL → usa a frase entre [...] SEM os colchetes
-4. Se o médico MENCIONA algo específico → há um ACHADO → escreve o que ele disse no lugar apropriado
+REGRAS FUNDAMENTAIS:
 
-PROCESSO:
-1. Lê o ditado e identifica o que o médico menciona
-2. Segue a estrutura do template secção por secção
-3. Para cada parte do template:
-   - Se o médico não falou disso → usa a frase padrão [normal] removendo os colchetes
-   - Se o médico mencionou algo → escreve os achados que ele ditou
-4. Mantém a ordem exata do template
-5. Adiciona CONCLUSÃO no final resumindo os achados
+1. ESTRUTURA DO TEMPLATE:
+   - O template tem frases entre colchetes [...] que representam achados NORMAIS
+   - Quando o médico NÃO menciona uma estrutura → está NORMAL → usa a frase [...] SEM colchetes
+   - Quando o médico MENCIONA algo específico → é um ACHADO → integra no local apropriado
 
-FORMATO FINAL - TEXTO LIMPO:
-- SEM colchetes []
-- SEM asteriscos ou markdown
-- SEM bullets
-- Texto corrido por secções
-- Pronto para copiar e colar diretamente
+2. COMO INTEGRAR ACHADOS:
+   - Se o achado é sobre uma estrutura que tem frase normal no template, MODIFICA essa frase
+   - Exemplo: Se template diz "[As vias de circulação de líquor são normais]" e médico diz "cavum do septo pelúcido", escreve:
+     "Pequenos cavum do septo pelúcido e cavum de Vergae - sem relevância clínica. As restantes vias de circulação de líquor são simétricas e apresentam configuração normal."
+   - O achado vem PRIMEIRO, depois o resto da frase adaptada
 
-SECÇÕES OBRIGATÓRIAS:
-- Título do exame (ex: RESSONÂNCIA MAGNÉTICA ENCEFÁLICA)
-- INFORMAÇÃO CLÍNICA: (do ditado)
-- TÉCNICA: (escolher a apropriada do template)
-- RELATÓRIO: (achados)
-- CONCLUSÃO: (resumo breve)`;
+3. SECÇÕES OBRIGATÓRIAS:
+   - TÍTULO DO EXAME (ex: RESSONÂNCIA MAGNÉTICA ENCEFÁLICA)
+   - INFORMAÇÃO CLÍNICA: (extrai do ditado a queixa/motivo entre aspas)
+   - TÉCNICA: (escolhe a opção técnica apropriada do template)
+   - RELATÓRIO: (todos os achados, linha por linha)
+   - CONCLUSÃO: (resume: "Exame sem alterações..." + lista achados específicos se houver)
+
+4. FORMATO FINAL - TEXTO LIMPO:
+   - SEM colchetes []
+   - SEM asteriscos ** ou markdown
+   - SEM bullets ou listas numeradas
+   - Cada frase do relatório numa linha separada
+   - Pronto para copiar e colar diretamente
+
+EXEMPLO DE OUTPUT ESPERADO:
+
+RESSONÂNCIA MAGNÉTICA ENCEFÁLICA
+
+INFORMAÇÃO CLÍNICA:
+
+"Hipoestesia do hemicorpo esquerdo com face"
+
+TÉCNICA:
+
+Para estudo do conteúdo endocraniano foram obtidos cortes sagitais T2, cortes coronais T2 e cortes axiais T1, T2, T2-FLAIR, T2* e difusão. Não foi injetado produto de contraste.
+
+RELATÓRIO:
+
+Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.
+
+O estudo da difusão é normal.
+
+[...continua com achados normais e específicos...]
+
+CONCLUSÃO:
+
+Exame sem alterações valorizáveis do parênquima encefálico.
+
+[Achados específicos se mencionados]`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
-    console.log("Transcription length:", transcription.length);
+    console.log("Transcription:", transcription);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -70,7 +94,7 @@ SECÇÕES OBRIGATÓRIAS:
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `DITADO MÉDICO:\n\n${transcription}\n\nAdapta este ditado ao template e gera o relatório final completo com CONCLUSÃO.` },
+          { role: "user", content: `DITADO MÉDICO (transcrição do áudio):\n\n${transcription}\n\nGera o relatório final estruturado seguindo EXATAMENTE as regras. Tudo o que não foi mencionado está NORMAL.` },
         ],
       }),
     });
@@ -105,11 +129,13 @@ SECÇÕES OBRIGATÓRIAS:
       .replace(/\*/g, '')             // Remove italic markdown
       .replace(/^#+\s*/gm, '')        // Remove heading markdown
       .replace(/^\s*[-•]\s*/gm, '')   // Remove bullet points
+      .replace(/^\s*\d+\.\s*/gm, '')  // Remove numbered lists
       .replace(/\[([^\]]*)\]/g, '$1') // Remove remaining brackets, keep content
       .replace(/\n{3,}/g, '\n\n')     // Normalize line breaks
       .trim();
     
-    console.log("AI processing complete, report length:", adaptedReport.length);
+    console.log("AI processing complete");
+    console.log("Report preview:", adaptedReport.substring(0, 200));
 
     return new Response(JSON.stringify({ 
       adaptedReport,
