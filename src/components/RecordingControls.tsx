@@ -1,23 +1,28 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
-import { Mic, MicOff, Pause, Play, Square, Timer, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Mic, MicOff, Pause, Play, Square, Timer, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface RecordingControlsProps {
   onTranscriptionUpdate: (text: string) => void;
 }
 
 export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsProps) {
+  const { toast } = useToast();
   const { 
     selectedTemplate, 
     setOriginalTranscription, 
-    applyKeywordReplacements, 
-    applyColonFormatting,
+    setReportContent,
     applyRulesToText 
   } = useEditorStore();
+  
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const accumulatedTranscriptRef = useRef<string>('');
   
   const {
     isRecording,
@@ -43,10 +48,12 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
     error: transcriptionError
   } = useRealtimeTranscription({
     onCommittedTranscript: (text) => {
-      // Apply replacement rules to transcribed text before adding to report
+      // Accumulate transcriptions for AI processing later
       const processedText = applyRulesToText(text);
+      accumulatedTranscriptRef.current += ' ' + processedText;
+      // Show live transcription in report for feedback
       onTranscriptionUpdate(processedText);
-      setOriginalTranscription(fullTranscript + ' ' + text);
+      setOriginalTranscription(accumulatedTranscriptRef.current);
     }
   });
 
@@ -57,17 +64,57 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
   };
 
   const handleStart = useCallback(async () => {
+    accumulatedTranscriptRef.current = '';
     await startRecording();
     await connect();
   }, [startRecording, connect]);
 
-  const handleStop = useCallback(() => {
+  const processWithAI = useCallback(async (transcription: string) => {
+    if (!selectedTemplate || !transcription.trim()) return;
+    
+    setIsProcessingAI(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('transcribe-report', {
+        body: {
+          transcription: transcription.trim(),
+          templateName: selectedTemplate.name,
+          templateBaseText: selectedTemplate.baseText,
+        }
+      });
+
+      if (error) throw error;
+
+      // Replace report content with AI-adapted version
+      if (data?.adaptedReport) {
+        setReportContent(data.adaptedReport);
+        toast({
+          title: "Relatório adaptado",
+          description: "O texto foi estruturado de acordo com o template."
+        });
+      }
+    } catch (err) {
+      console.error('AI processing error:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro ao processar",
+        description: "Não foi possível adaptar o relatório. O texto original foi mantido."
+      });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  }, [selectedTemplate, setReportContent, toast]);
+
+  const handleStop = useCallback(async () => {
     stopRecording();
     disconnect();
-    // Apply text processing
-    applyKeywordReplacements();
-    applyColonFormatting();
-  }, [stopRecording, disconnect, applyKeywordReplacements, applyColonFormatting]);
+    
+    // Process with AI after stopping
+    const transcription = accumulatedTranscriptRef.current.trim();
+    if (transcription) {
+      await processWithAI(transcription);
+    }
+  }, [stopRecording, disconnect, processWithAI]);
 
   const handlePause = useCallback(() => {
     pauseRecording();
@@ -93,7 +140,14 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
       {/* Recording status and timer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {isRecording && (
+          {isProcessingAI && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              A adaptar com AI...
+            </div>
+          )}
+          
+          {isRecording && !isProcessingAI && (
             <div className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
               isPaused ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"
@@ -106,7 +160,7 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
             </div>
           )}
           
-          {isConnected && !isRecording && (
+          {isConnected && !isRecording && !isProcessingAI && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-success/10 text-success">
               <div className="w-2 h-2 rounded-full bg-success" />
               Conectado
@@ -135,7 +189,7 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
 
       {/* Control buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        {!isRecording ? (
+        {!isRecording && !isProcessingAI ? (
           <Button
             onClick={handleStart}
             disabled={isConnecting || !selectedTemplate}
@@ -153,6 +207,11 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
                 Iniciar Gravação
               </>
             )}
+          </Button>
+        ) : isProcessingAI ? (
+          <Button disabled size="lg" className="gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            A processar com AI...
           </Button>
         ) : (
           <>
@@ -175,7 +234,7 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
           </>
         )}
 
-        {audioUrl && !isRecording && (
+        {audioUrl && !isRecording && !isProcessingAI && (
           <Button onClick={handleExportAudio} variant="outline" className="gap-2">
             Exportar Áudio
           </Button>

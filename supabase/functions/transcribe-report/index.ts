@@ -11,43 +11,54 @@ serve(async (req) => {
   }
 
   try {
-    const { transcription, patientInfo, examType } = await req.json();
+    const { transcription, templateName, templateBaseText, patientInfo, examType } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `És um assistente médico especializado em neurologia. O teu trabalho é estruturar relatórios clínicos a partir de ditados médicos.
+    if (!transcription) {
+      throw new Error("Transcription is required");
+    }
+
+    // Build context from template
+    const templateContext = templateName 
+      ? `Template selecionado: ${templateName}\n${templateBaseText ? `Estrutura base do template:\n${templateBaseText}\n` : ''}`
+      : '';
+
+    // Build patient context if available
+    const patientContext = patientInfo 
+      ? `Paciente: ${patientInfo.name}${patientInfo.dateOfBirth ? `, Data de Nascimento: ${patientInfo.dateOfBirth}` : ''}${patientInfo.clinicalHistory ? `, Histórico Clínico: ${patientInfo.clinicalHistory}` : ''}`
+      : '';
+
+    const systemPrompt = `És um assistente médico especializado em radiologia e relatórios clínicos. O teu trabalho é adaptar ditados médicos à estrutura de um template de relatório.
 
 CONTEXTO:
-- Paciente: ${patientInfo.name}
-- Tipo de Exame: ${examType}
-${patientInfo.dateOfBirth ? `- Data de Nascimento: ${patientInfo.dateOfBirth}` : ''}
-${patientInfo.clinicalHistory ? `- Histórico Clínico: ${patientInfo.clinicalHistory}` : ''}
+${templateContext}
+${patientContext}
+${examType ? `Tipo de Exame: ${examType}` : ''}
 
 INSTRUÇÕES:
 1. Analisa a transcrição do ditado médico
-2. Extrai e organiza a informação nas seguintes secções:
-   - Motivo da Consulta/Exame
-   - Achados do Exame
-   - Diagnóstico/Impressão
-   - Recomendações/Plano Terapêutico
-   - Observações Adicionais
+2. Adapta o conteúdo à estrutura do template fornecido, mantendo TODOS os cabeçalhos e secções do template
+3. Preenche cada secção com a informação relevante extraída da transcrição
+4. Se uma secção não tiver informação na transcrição, mantém o texto original do template ou indica "Sem alterações"
+5. Mantém a terminologia médica original e profissional
+6. Corrige erros de transcrição óbvios (palavras mal interpretadas pelo reconhecimento de voz)
+7. Formata o texto de forma clara e profissional
+8. Responde APENAS em português de Portugal
+9. O resultado deve ser texto formatado pronto para o relatório final, NÃO em JSON
 
-3. Mantém a terminologia médica original
-4. Corrige erros de transcrição óbvios
-5. Formata o texto de forma clara e profissional
-6. Responde APENAS em português de Portugal
+IMPORTANTE:
+- Mantém a estrutura de secções do template
+- Usa linguagem médica formal e precisa
+- Não inventes informação que não esteja na transcrição
+- Se o template tiver placeholders como [xxx], substitui-os pela informação relevante da transcrição`;
 
-FORMATO DE RESPOSTA (JSON):
-{
-  "consultation_reason": "texto",
-  "exam_findings": "texto",
-  "diagnosis": "texto",
-  "therapeutic_plan": "texto",
-  "observations": "texto"
-}`;
+    console.log("Processing transcription with AI...");
+    console.log("Template:", templateName);
+    console.log("Transcription length:", transcription.length);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -59,9 +70,8 @@ FORMATO DE RESPOSTA (JSON):
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Transcrição do ditado:\n\n${transcription}` },
+          { role: "user", content: `Transcrição do ditado:\n\n${transcription}\n\nAdapta este ditado à estrutura do template e devolve o relatório formatado.` },
         ],
-        response_format: { type: "json_object" },
       }),
     });
 
@@ -87,22 +97,14 @@ FORMATO DE RESPOSTA (JSON):
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const adaptedReport = data.choices?.[0]?.message?.content || transcription;
     
-    let structuredReport;
-    try {
-      structuredReport = JSON.parse(content);
-    } catch {
-      structuredReport = {
-        consultation_reason: "",
-        exam_findings: content,
-        diagnosis: "",
-        therapeutic_plan: "",
-        observations: ""
-      };
-    }
+    console.log("AI processing complete, report length:", adaptedReport.length);
 
-    return new Response(JSON.stringify(structuredReport), {
+    return new Response(JSON.stringify({ 
+      adaptedReport,
+      originalTranscription: transcription 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
