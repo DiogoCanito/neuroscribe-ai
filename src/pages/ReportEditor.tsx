@@ -4,6 +4,8 @@ import { RecordingControls } from '@/components/RecordingControls';
 import { ReportEditor } from '@/components/ReportEditor';
 import { VoiceCommandsToggle } from '@/components/VoiceCommandsToggle';
 import { AudioUpload } from '@/components/AudioUpload';
+import { TextManipulationDialog } from '@/components/TextManipulationDialog';
+import { AutoTextDialog } from '@/components/AutoTextDialog';
 import { useEditorStore } from '@/stores/editorStore';
 import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
@@ -137,8 +139,9 @@ export default function ReportEditorPage() {
 
         {/* Editor Area */}
         <div className="flex-1 flex flex-col">
-          {/* Recording Controls + Audio Upload */}
-          <div className="p-4 border-b border-border bg-card">
+          {/* Recording Controls + Tools */}
+          <div className="p-4 border-b border-border bg-card space-y-4">
+            {/* Recording and Upload Row */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <RecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
@@ -146,6 +149,13 @@ export default function ReportEditorPage() {
               <div className="w-72">
                 <AudioUpload onTranscriptionComplete={handleTranscriptionUpdate} />
               </div>
+            </div>
+            
+            {/* Text Tools Row */}
+            <div className="flex items-center gap-3 pt-2 border-t border-border/50">
+              <span className="text-sm text-muted-foreground">Ferramentas:</span>
+              <TextManipulationDialog disabled={!selectedTemplate} />
+              <AutoTextDialog disabled={!selectedTemplate} />
             </div>
           </div>
 
