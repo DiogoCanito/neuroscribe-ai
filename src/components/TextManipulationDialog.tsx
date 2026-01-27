@@ -24,11 +24,7 @@ import {
   X
 } from 'lucide-react';
 
-interface TextManipulationDialogProps {
-  disabled?: boolean;
-}
-
-export function TextManipulationDialog({ disabled }: TextManipulationDialogProps) {
+export function TextManipulationDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
@@ -42,7 +38,6 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
     reportContent, 
     setReportContent,
     findAndReplace,
-    selectedTemplate,
     // Global state from store
     replacementRules,
     addReplacementRule,
@@ -144,11 +139,7 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="gap-2"
-          disabled={disabled || !selectedTemplate}
-        >
+        <Button variant="outline" className="gap-2">
           <Edit2 className="w-4 h-4" />
           Manipulação de Texto
         </Button>
