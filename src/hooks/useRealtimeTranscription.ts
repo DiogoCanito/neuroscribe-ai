@@ -73,16 +73,18 @@ export function useRealtimeTranscription(
         throw new Error(tokenError?.message || 'Failed to get transcription token');
       }
 
-      // Connect to ElevenLabs WebSocket
-      const ws = new WebSocket(`wss://api.elevenlabs.io/v1/realtime-scribe?token=${data.token}&model_id=scribe_v2_realtime&language=pt`);
+      // Connect to ElevenLabs Speech-to-Text Realtime WebSocket
+      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?token=${data.token}&model_id=scribe_v2_realtime&language_code=pt`;
+      console.log('Connecting to ElevenLabs Speech-to-Text...');
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('Connected to ElevenLabs Scribe');
+        console.log('Connected to ElevenLabs Speech-to-Text');
         setIsConnected(true);
         setIsConnecting(false);
 
-        // Start sending audio
+        // Start sending audio as PCM 16kHz
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
             ? 'audio/webm;codecs=opus' 
@@ -95,8 +97,9 @@ export function useRealtimeTranscription(
             const arrayBuffer = await event.data.arrayBuffer();
             const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
             ws.send(JSON.stringify({
-              type: 'audio',
-              audio: base64
+              message_type: 'input_audio_chunk',
+              audio_base_64: base64,
+              sample_rate: 16000
             }));
           }
         };
@@ -107,16 +110,24 @@ export function useRealtimeTranscription(
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          console.log('Scribe message:', message.message_type, message);
           
-          if (message.type === 'partial_transcript') {
-            const text = message.text || message.partial_transcript;
+          if (message.message_type === 'partial_transcript') {
+            const text = message.text || '';
             setPartialTranscript(text);
             options.onPartialTranscript?.(text);
-          } else if (message.type === 'committed_transcript') {
-            const text = message.text || message.committed_transcript;
-            setCommittedTranscripts(prev => [...prev, text]);
+          } else if (message.message_type === 'committed_transcript' || message.message_type === 'committed_transcript_with_timestamps') {
+            const text = message.text || '';
+            if (text.trim()) {
+              setCommittedTranscripts(prev => [...prev, text]);
+            }
             setPartialTranscript('');
             options.onCommittedTranscript?.(text);
+          } else if (message.message_type === 'session_started') {
+            console.log('Session started:', message.session_id);
+          } else if (message.message_type === 'error') {
+            console.error('Scribe error:', message);
+            setError(message.error || 'Erro de transcrição');
           }
         } catch (e) {
           console.error('Error parsing WebSocket message:', e);
@@ -125,12 +136,13 @@ export function useRealtimeTranscription(
 
       ws.onerror = (event) => {
         console.error('WebSocket error:', event);
-        setError('Connection error');
-        options.onError?.('Connection error');
+        setError('Erro de conexão com o serviço de transcrição');
+        options.onError?.('Erro de conexão');
+        setIsConnecting(false);
       };
 
-      ws.onclose = () => {
-        console.log('Disconnected from ElevenLabs Scribe');
+      ws.onclose = (event) => {
+        console.log('Disconnected from ElevenLabs, code:', event.code, 'reason:', event.reason);
         setIsConnected(false);
         setIsConnecting(false);
       };
