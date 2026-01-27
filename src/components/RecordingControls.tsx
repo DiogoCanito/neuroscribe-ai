@@ -1,12 +1,14 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { supabase } from '@/integrations/supabase/client';
-import { Mic, MicOff, Pause, Play, Square, Timer, Loader2, Sparkles } from 'lucide-react';
+import { Mic, MicOff, Pause, Play, Square, Timer, Loader2, Sparkles, TestTube, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface RecordingControlsProps {
   onTranscriptionUpdate: (text: string) => void;
@@ -23,6 +25,8 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
   
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const [showTestInput, setShowTestInput] = useState(false);
+  const [testText, setTestText] = useState('');
   const accumulatedTranscriptRef = useRef<string>('');
   
   const {
@@ -242,7 +246,63 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
             Exportar Áudio
           </Button>
         )}
+
+        {/* Test mode toggle */}
+        <Button 
+          onClick={() => setShowTestInput(!showTestInput)} 
+          variant="ghost" 
+          size="sm"
+          className="gap-1.5 ml-auto text-muted-foreground"
+        >
+          <TestTube className="w-4 h-4" />
+          Modo Teste
+          {showTestInput ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </Button>
       </div>
+
+      {/* Test input for simulating transcription */}
+      <Collapsible open={showTestInput} onOpenChange={setShowTestInput}>
+        <CollapsibleContent>
+          <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-border space-y-2">
+            <p className="text-xs text-muted-foreground font-medium">
+              Cole ou escreva um texto para simular uma transcrição de áudio:
+            </p>
+            <Textarea
+              value={testText}
+              onChange={(e) => setTestText(e.target.value)}
+              placeholder="Ex: Informação clínica estadiamento de neoplasia do pulmão. Exame sem alterações valorizáveis..."
+              className="min-h-[80px] text-sm"
+              disabled={!selectedTemplate}
+            />
+            <Button
+              onClick={async () => {
+                if (!testText.trim() || !selectedTemplate) return;
+                setOriginalTranscription(testText);
+                await processWithAI(testText);
+                toast({
+                  title: "Teste executado",
+                  description: "O texto foi processado como se fosse uma transcrição."
+                });
+              }}
+              disabled={!testText.trim() || !selectedTemplate || isProcessingAI}
+              size="sm"
+              className="gap-1.5"
+            >
+              {isProcessingAI ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  A processar...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Gerar Relatório
+                </>
+              )}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Live transcription display during recording */}
       {(isRecording || isConnected) && (
