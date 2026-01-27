@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useEditorStore } from '@/stores/editorStore';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -20,7 +19,6 @@ import {
   Plus, 
   Trash2, 
   Edit2,
-  Zap,
   X
 } from 'lucide-react';
 
@@ -31,7 +29,7 @@ export function TextManipulationDialog() {
   // Local state for new entries
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
-  const [newRule, setNewRule] = useState({ from: '', to: '', autoApply: true });
+  const [newRule, setNewRule] = useState({ from: '', to: '' });
   const [newTerm, setNewTerm] = useState('');
   
   const { 
@@ -41,9 +39,7 @@ export function TextManipulationDialog() {
     // Global state from store
     replacementRules,
     addReplacementRule,
-    updateReplacementRule,
     deleteReplacementRule,
-    applyReplacementRules,
     customTerms,
     addCustomTerm,
     deleteCustomTerm,
@@ -73,30 +69,14 @@ export function TextManipulationDialog() {
     addReplacementRule({
       from: newRule.from.trim(),
       to: newRule.to.trim(),
-      autoApply: newRule.autoApply
+      autoApply: true
     });
     
-    setNewRule({ from: '', to: '', autoApply: true });
+    setNewRule({ from: '', to: '' });
     toast({
       title: "Regra criada",
       description: `"${newRule.from}" → "${newRule.to}"`
     });
-  };
-
-  // Apply all auto rules
-  const handleApplyRules = () => {
-    const count = applyReplacementRules();
-    if (count > 0) {
-      toast({
-        title: "Regras aplicadas",
-        description: `${count} substituições realizadas`
-      });
-    } else {
-      toast({
-        title: "Nenhuma substituição",
-        description: "Não foram encontradas correspondências"
-      });
-    }
   };
 
   // Highlight handler
@@ -206,27 +186,47 @@ export function TextManipulationDialog() {
             
             {/* Replacement Rules */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium">Regras de Substituição</h4>
-                  <p className="text-xs text-muted-foreground">Regras globais guardadas para todos os templates</p>
+              <div>
+                <h4 className="text-sm font-medium">Regras de Substituição Automática</h4>
+                <p className="text-xs text-muted-foreground">
+                  Regras aplicadas automaticamente ao texto transcrito
+                </p>
+              </div>
+              
+              {/* Add new rule - moved to top */}
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Quando eu disser..."
+                    value={newRule.from}
+                    onChange={(e) => setNewRule({ ...newRule, from: e.target.value })}
+                    className="flex-1"
+                  />
+                  <span className="text-muted-foreground">→</span>
+                  <Input
+                    placeholder="Escreve..."
+                    value={newRule.to}
+                    onChange={(e) => setNewRule({ ...newRule, to: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleAddRule}
+                    disabled={!newRule.from.trim() || !newRule.to.trim()}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar Regra
+                  </Button>
                 </div>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={handleApplyRules}
-                  className="gap-1"
-                >
-                  <Zap className="w-3 h-3" />
-                  Aplicar Regras
-                </Button>
               </div>
               
               <ScrollArea className="h-40 rounded-md border p-2">
                 <div className="space-y-2">
                   {replacementRules.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Nenhuma regra criada. Adicione abaixo.
+                      Nenhuma regra criada. Adicione acima.
                     </p>
                   ) : (
                     replacementRules.map((rule) => (
@@ -237,18 +237,6 @@ export function TextManipulationDialog() {
                         <span className="font-mono bg-background px-2 py-0.5 rounded">{rule.from}</span>
                         <span className="text-muted-foreground">→</span>
                         <span className="flex-1">{rule.to}</span>
-                        <div className="flex items-center gap-1">
-                          <Checkbox
-                            checked={rule.autoApply}
-                            onCheckedChange={(checked) => {
-                              updateReplacementRule(rule.id, { autoApply: !!checked });
-                            }}
-                            id={`auto-${rule.id}`}
-                          />
-                          <label htmlFor={`auto-${rule.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                            Auto
-                          </label>
-                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -265,48 +253,6 @@ export function TextManipulationDialog() {
                   )}
                 </div>
               </ScrollArea>
-              
-              {/* Add new rule */}
-              <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
-                <p className="text-xs font-medium">Nova Regra</p>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    placeholder="Quando eu disser..."
-                    value={newRule.from}
-                    onChange={(e) => setNewRule({ ...newRule, from: e.target.value })}
-                    className="flex-1"
-                  />
-                  <span className="text-muted-foreground">→</span>
-                  <Input
-                    placeholder="Escreve..."
-                    value={newRule.to}
-                    onChange={(e) => setNewRule({ ...newRule, to: e.target.value })}
-                    className="flex-1"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={newRule.autoApply}
-                      onCheckedChange={(checked) => setNewRule({ ...newRule, autoApply: !!checked })}
-                      id="new-auto"
-                    />
-                    <label htmlFor="new-auto" className="text-xs text-muted-foreground cursor-pointer">
-                      Aplicar automaticamente
-                    </label>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleAddRule}
-                    disabled={!newRule.from.trim() || !newRule.to.trim()}
-                    className="gap-1"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
             </div>
           </TabsContent>
           
