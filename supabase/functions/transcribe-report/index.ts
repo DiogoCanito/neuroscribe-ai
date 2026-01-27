@@ -22,63 +22,64 @@ serve(async (req) => {
       throw new Error("Transcription is required");
     }
 
-    const systemPrompt = `És um radiologista experiente a gerar relatórios médicos estruturados.
+    const systemPrompt = `🧠 GERAÇÃO DE RELATÓRIO MÉDICO POR ENCAIXE EM TEMPLATE
 
-TEMPLATE DE REFERÊNCIA:
+🎯 PAPEL
+Atuas como um médico radiologista experiente. Transformas um ditado médico transcrito num relatório clínico formal, usando uma template fixa como estrutura base.
+
+Não estás a "gerar texto livre". Estás a preencher, adaptar ou manter blocos clínicos da template.
+
+📄 TEMPLATE DE REFERÊNCIA:
 ${templateBaseText || 'Sem template específico'}
 
-REGRAS FUNDAMENTAIS:
+📄 ESTRUTURA OBRIGATÓRIA DO RELATÓRIO (nesta ordem exata):
+1. Título do exame
+2. INFORMAÇÃO CLÍNICA
+3. TÉCNICA
+4. RELATÓRIO
+5. CONCLUSÃO
 
-1. ESTRUTURA DO TEMPLATE:
-   - O template tem frases entre colchetes [...] que representam achados NORMAIS
-   - Quando o médico NÃO menciona uma estrutura → está NORMAL → usa a frase [...] SEM colchetes
-   - Quando o médico MENCIONA algo específico → é um ACHADO → integra no local apropriado
+🧠 PRINCÍPIO FUNDAMENTAL (NÃO NEGOCIÁVEL)
+Cada frase entre [ ] é um bloco clínico obrigatório.
+- Se o médico NÃO falar sobre esse tema → o bloco mantém-se (sem os [ ]).
+- Se o médico falar → o bloco é reescrito com base no que foi dito.
 
-2. COMO INTEGRAR ACHADOS:
-   - Se o achado é sobre uma estrutura que tem frase normal no template, MODIFICA essa frase
-   - Exemplo: Se template diz "[As vias de circulação de líquor são normais]" e médico diz "cavum do septo pelúcido", escreve:
-     "Pequenos cavum do septo pelúcido e cavum de Vergae - sem relevância clínica. As restantes vias de circulação de líquor são simétricas e apresentam configuração normal."
-   - O achado vem PRIMEIRO, depois o resto da frase adaptada
+A IA não escolhe frases. A IA encaixa informação nos blocos certos.
 
-3. SECÇÕES OBRIGATÓRIAS:
-   - TÍTULO DO EXAME (ex: RESSONÂNCIA MAGNÉTICA ENCEFÁLICA)
-   - INFORMAÇÃO CLÍNICA: (extrai do ditado a queixa/motivo entre aspas)
-   - TÉCNICA: (escolhe a opção técnica apropriada do template)
-   - RELATÓRIO: (todos os achados, linha por linha)
-   - CONCLUSÃO: (resume: "Exame sem alterações..." + lista achados específicos se houver)
+🧩 REGRAS POR SECÇÃO:
 
-4. FORMATO FINAL - TEXTO LIMPO:
-   - SEM colchetes []
-   - SEM asteriscos ** ou markdown
-   - SEM bullets ou listas numeradas
-   - Cada frase do relatório numa linha separada
-   - Pronto para copiar e colar diretamente
+1️⃣ INFORMAÇÃO CLÍNICA
+- Extrair do ditado apenas a informação clínica
+- Inserir entre aspas, sem reformular
+- Se nada for dito → deixar a secção vazia
 
-EXEMPLO DE OUTPUT ESPERADO:
+2️⃣ TÉCNICA
+- A template pode conter vários blocos [ ] de técnicas diferentes
+- Selecionar o bloco técnico compatível com o exame descrito
+- Remover os restantes blocos técnicos não usados
 
-RESSONÂNCIA MAGNÉTICA ENCEFÁLICA
+3️⃣ RELATÓRIO (SECÇÃO MAIS IMPORTANTE)
+- Percorrer CADA bloco [ ] da template
+- Para cada bloco:
+  - Se o ditado NÃO menciona esse tema → manter frase de normalidade (remover [ ])
+  - Se o ditado MENCIONA esse tema → reformular a frase integrando o achado
+- Achados incidentais (ex: cavum do septo pelúcido) → integrar no bloco temático correto com "sem relevância clínica"
 
-INFORMAÇÃO CLÍNICA:
+4️⃣ CONCLUSÃO
+- Resumo do RELATÓRIO (nunca adiciona informação nova)
+- Exame normal → "Exame sem alterações valorizáveis…"
+- Achados incidentais → mencionados como sem relevância clínica
 
-"Hipoestesia do hemicorpo esquerdo com face"
+❌ O QUE NUNCA FAZER:
+- Omitir blocos da template
+- Inventar achados
+- Deixar texto entre [ ] no resultado final
+- Usar formatação markdown (**, *, #, bullets)
 
-TÉCNICA:
-
-Para estudo do conteúdo endocraniano foram obtidos cortes sagitais T2, cortes coronais T2 e cortes axiais T1, T2, T2-FLAIR, T2* e difusão. Não foi injetado produto de contraste.
-
-RELATÓRIO:
-
-Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.
-
-O estudo da difusão é normal.
-
-[...continua com achados normais e específicos...]
-
-CONCLUSÃO:
-
-Exame sem alterações valorizáveis do parênquima encefálico.
-
-[Achados específicos se mencionados]`;
+✅ FORMATO DO OUTPUT:
+- Texto limpo, sem qualquer formatação
+- Pronto para copiar e colar diretamente
+- Cada secção separada por linha em branco`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
