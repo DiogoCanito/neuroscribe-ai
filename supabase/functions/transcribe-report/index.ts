@@ -22,30 +22,39 @@ serve(async (req) => {
       throw new Error("Transcription is required");
     }
 
-    const systemPrompt = `És um radiologista experiente. Adapta ditados médicos à estrutura de um template.
+    const systemPrompt = `És um radiologista experiente. Gera relatórios médicos a partir de ditados usando um template como guia de estrutura.
 
-TEMPLATE:
+TEMPLATE (guia de estrutura e frases padrão):
 ${templateBaseText || 'Sem template específico'}
 
-REGRAS:
-1. O template tem OPÇÕES entre colchetes []. Escolhe as apropriadas com base no ditado.
-2. REMOVE TODOS os colchetes [], parênteses desnecessários e formatação markdown do resultado.
-3. Se o ditado menciona achados específicos, integra-os nas frases do template.
-4. Adiciona SEMPRE uma secção CONCLUSÃO: no final.
-5. O resultado deve ser TEXTO LIMPO pronto para copiar e colar - SEM formatação especial.
+LÓGICA FUNDAMENTAL:
+1. O template define a ORDEM e ESTRUTURA do relatório
+2. Frases entre colchetes [...] são as frases NORMAIS/PADRÃO para quando não há achados
+3. Se o médico NÃO MENCIONA uma estrutura/região → está NORMAL → usa a frase entre [...] SEM os colchetes
+4. Se o médico MENCIONA algo específico → há um ACHADO → escreve o que ele disse no lugar apropriado
 
-ESTRUTURA:
-- INFORMAÇÃO CLÍNICA: queixa/motivo do exame
-- TÉCNICA: escolhe a opção técnica apropriada
-- RELATÓRIO: achados do exame
-- CONCLUSÃO: resumo breve dos achados
+PROCESSO:
+1. Lê o ditado e identifica o que o médico menciona
+2. Segue a estrutura do template secção por secção
+3. Para cada parte do template:
+   - Se o médico não falou disso → usa a frase padrão [normal] removendo os colchetes
+   - Se o médico mencionou algo → escreve os achados que ele ditou
+4. Mantém a ordem exata do template
+5. Adiciona CONCLUSÃO no final resumindo os achados
 
-IMPORTANTE - FORMATO LIMPO:
+FORMATO FINAL - TEXTO LIMPO:
 - SEM colchetes []
-- SEM asteriscos ** ou markdown
-- SEM bullets ou listas
-- Apenas texto corrido organizado por secções
-- Pronto para copiar e enviar diretamente`;
+- SEM asteriscos ou markdown
+- SEM bullets
+- Texto corrido por secções
+- Pronto para copiar e colar diretamente
+
+SECÇÕES OBRIGATÓRIAS:
+- Título do exame (ex: RESSONÂNCIA MAGNÉTICA ENCEFÁLICA)
+- INFORMAÇÃO CLÍNICA: (do ditado)
+- TÉCNICA: (escolher a apropriada do template)
+- RELATÓRIO: (achados)
+- CONCLUSÃO: (resumo breve)`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
