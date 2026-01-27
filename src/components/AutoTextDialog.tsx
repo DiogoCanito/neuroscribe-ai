@@ -21,17 +21,12 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-interface AutoTextDialogProps {
-  disabled?: boolean;
-}
-
-export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
+export function AutoTextDialog() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [newCommand, setNewCommand] = useState({ keyword: '', text: '' });
   
   const { 
-    selectedTemplate,
     reportContent,
     setReportContent,
     voiceCommands,
@@ -70,11 +65,7 @@ export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="gap-2"
-          disabled={disabled || !selectedTemplate}
-        >
+        <Button variant="outline" className="gap-2">
           <MessageSquare className="w-4 h-4" />
           AutoTexto
         </Button>
