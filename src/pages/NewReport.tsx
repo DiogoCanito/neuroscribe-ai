@@ -64,7 +64,7 @@ export default function NewReport() {
       setPatients(data || []);
     } catch (error) {
       console.error('Error loading patients:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar doentes" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao carregar pacientes" });
     } finally {
       setLoading(false);
     }
@@ -90,12 +90,12 @@ export default function NewReport() {
 
       if (error) throw error;
       
-      toast({ title: "Sucesso", description: "Doente criado com sucesso" });
+      toast({ title: "Sucesso", description: "Paciente criado com sucesso" });
       setIsNewPatientDialogOpen(false);
       navigate(`/patients/${data.id}`);
     } catch (error) {
       console.error('Error creating patient:', error);
-      toast({ variant: "destructive", title: "Erro", description: "Erro ao criar doente" });
+      toast({ variant: "destructive", title: "Erro", description: "Erro ao criar paciente" });
     } finally {
       setSaving(false);
     }
@@ -127,7 +127,7 @@ export default function NewReport() {
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Novo Exame</h1>
           <p className="text-muted-foreground">
-            Selecione um doente para criar um novo exame e relatório
+            Selecione um paciente para criar um novo exame e relatório
           </p>
         </div>
 
@@ -148,13 +148,13 @@ export default function NewReport() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2 shrink-0">
                     <Plus className="w-4 h-4" />
-                    Novo Doente
+                    Novo Paciente
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Novo Doente</DialogTitle>
-                    <DialogDescription>Criar um novo doente para registar exames</DialogDescription>
+                    <DialogTitle>Novo Paciente</DialogTitle>
+                    <DialogDescription>Criar um novo paciente para registar exames</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleCreatePatient} className="space-y-4">
                     <div className="space-y-2">
@@ -222,9 +222,9 @@ export default function NewReport() {
         {/* Patients List */}
         <Card className="card-medical">
           <CardHeader>
-            <CardTitle className="text-lg">Selecionar Doente</CardTitle>
+            <CardTitle className="text-lg">Selecionar Paciente</CardTitle>
             <CardDescription>
-              Escolha o doente para criar o exame
+              Escolha o paciente para criar o exame
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -274,7 +274,7 @@ export default function NewReport() {
               <div className="text-center py-8">
                 <User className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {searchTerm ? "Nenhum doente encontrado" : "Nenhum doente registado"}
+                  {searchTerm ? "Nenhum paciente encontrado" : "Nenhum paciente registado"}
                 </p>
                 {!searchTerm && (
                   <Button 
@@ -284,7 +284,7 @@ export default function NewReport() {
                     onClick={() => setIsNewPatientDialogOpen(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Criar primeiro doente
+                    Criar primeiro paciente
                   </Button>
                 )}
               </div>

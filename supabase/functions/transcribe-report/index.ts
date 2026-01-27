@@ -21,7 +21,7 @@ serve(async (req) => {
     const systemPrompt = `És um assistente médico especializado em neurologia. O teu trabalho é estruturar relatórios clínicos a partir de ditados médicos.
 
 CONTEXTO:
-- Doente: ${patientInfo.name}
+- Paciente: ${patientInfo.name}
 - Tipo de Exame: ${examType}
 ${patientInfo.dateOfBirth ? `- Data de Nascimento: ${patientInfo.dateOfBirth}` : ''}
 ${patientInfo.clinicalHistory ? `- Histórico Clínico: ${patientInfo.clinicalHistory}` : ''}
