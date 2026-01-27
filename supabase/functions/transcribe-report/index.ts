@@ -22,40 +22,30 @@ serve(async (req) => {
       throw new Error("Transcription is required");
     }
 
-    const systemPrompt = `És um radiologista experiente especializado em relatórios médicos. O teu trabalho é adaptar ditados médicos à estrutura de um template de relatório.
+    const systemPrompt = `És um radiologista experiente. Adapta ditados médicos à estrutura de um template.
 
-TEMPLATE A USAR:
+TEMPLATE:
 ${templateBaseText || 'Sem template específico'}
 
-REGRAS DE FORMATAÇÃO DO TEMPLATE:
-1. O template contém OPÇÕES entre colchetes []. Cada bloco [...] representa uma frase opcional ou alternativa.
-2. Com base no ditado, ESCOLHE as opções apropriadas removendo os colchetes.
-3. Se o ditado menciona achados específicos, MODIFICA a frase escolhida para incluir esses achados.
-4. Se uma opção não se aplica (o ditado não menciona esse aspeto), podes OMITIR essa linha.
-5. Quando há várias opções similares (ex: diferentes técnicas), escolhe A QUE CORRESPONDE ao que foi ditado.
+REGRAS:
+1. O template tem OPÇÕES entre colchetes []. Escolhe as apropriadas com base no ditado.
+2. REMOVE TODOS os colchetes [], parênteses desnecessários e formatação markdown do resultado.
+3. Se o ditado menciona achados específicos, integra-os nas frases do template.
+4. Adiciona SEMPRE uma secção CONCLUSÃO: no final.
+5. O resultado deve ser TEXTO LIMPO pronto para copiar e colar - SEM formatação especial.
 
-ESTRUTURA DO RELATÓRIO:
-- INFORMAÇÃO CLÍNICA: Extrai do ditado a queixa/motivo do exame
-- TÉCNICA: Escolhe a opção técnica apropriada do template
-- RELATÓRIO: Preenche com os achados, escolhendo e adaptando as opções do template
-- CONCLUSÃO: ADICIONA SEMPRE uma secção de conclusão no final resumindo os achados principais
+ESTRUTURA:
+- INFORMAÇÃO CLÍNICA: queixa/motivo do exame
+- TÉCNICA: escolhe a opção técnica apropriada
+- RELATÓRIO: achados do exame
+- CONCLUSÃO: resumo breve dos achados
 
-INSTRUÇÕES ESPECÍFICAS:
-1. Mantém TODOS os cabeçalhos do template (INFORMAÇÃO CLÍNICA, TÉCNICA, RELATÓRIO, etc.)
-2. Remove TODOS os colchetes [] do resultado final
-3. Quando o ditado menciona achados específicos (ex: "cavum do septo pelúcido"), integra-os na frase apropriada
-4. A CONCLUSÃO deve ser breve e destacar os achados relevantes ou indicar "exame sem alterações" se normal
-5. Usa português de Portugal formal e terminologia médica precisa
-6. NÃO inventes achados - usa apenas o que está no ditado
-7. Se algo não foi mencionado no ditado, usa as opções "normais" do template
-
-EXEMPLO DE TRANSFORMAÇÃO:
-- Template: "[Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.]"
-- Se ditado diz "parênquima normal": Remove colchetes → "Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico."
-- Se ditado menciona lesão: Adapta → "Identifica-se pequena lesão hiperintensa em T2..."
-
-FORMATO DE SAÍDA:
-Devolve o relatório completo formatado, sem colchetes, com todas as secções preenchidas e uma CONCLUSÃO no final.`;
+IMPORTANTE - FORMATO LIMPO:
+- SEM colchetes []
+- SEM asteriscos ** ou markdown
+- SEM bullets ou listas
+- Apenas texto corrido organizado por secções
+- Pronto para copiar e enviar diretamente`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
@@ -98,7 +88,17 @@ Devolve o relatório completo formatado, sem colchetes, com todas as secções p
     }
 
     const data = await response.json();
-    const adaptedReport = data.choices?.[0]?.message?.content || transcription;
+    let adaptedReport = data.choices?.[0]?.message?.content || transcription;
+    
+    // Clean up any remaining markdown or formatting
+    adaptedReport = adaptedReport
+      .replace(/\*\*/g, '')           // Remove bold markdown
+      .replace(/\*/g, '')             // Remove italic markdown
+      .replace(/^#+\s*/gm, '')        // Remove heading markdown
+      .replace(/^\s*[-•]\s*/gm, '')   // Remove bullet points
+      .replace(/\[([^\]]*)\]/g, '$1') // Remove remaining brackets, keep content
+      .replace(/\n{3,}/g, '\n\n')     // Normalize line breaks
+      .trim();
     
     console.log("AI processing complete, report length:", adaptedReport.length);
 
