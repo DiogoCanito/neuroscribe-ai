@@ -11,7 +11,13 @@ interface RecordingControlsProps {
 }
 
 export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsProps) {
-  const { selectedTemplate, setOriginalTranscription, applyKeywordReplacements, applyColonFormatting } = useEditorStore();
+  const { 
+    selectedTemplate, 
+    setOriginalTranscription, 
+    applyKeywordReplacements, 
+    applyColonFormatting,
+    applyRulesToText 
+  } = useEditorStore();
   
   const {
     isRecording,
@@ -37,7 +43,9 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
     error: transcriptionError
   } = useRealtimeTranscription({
     onCommittedTranscript: (text) => {
-      onTranscriptionUpdate(text);
+      // Apply replacement rules to transcribed text before adding to report
+      const processedText = applyRulesToText(text);
+      onTranscriptionUpdate(processedText);
       setOriginalTranscription(fullTranscript + ' ' + text);
     }
   });

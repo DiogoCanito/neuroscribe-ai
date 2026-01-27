@@ -77,6 +77,7 @@ interface EditorState {
   applyKeywordReplacements: () => void;
   applyColonFormatting: () => void;
   applyReplacementRules: () => number;
+  applyRulesToText: (text: string) => string;
   findAndReplace: (find: string, replace: string, all?: boolean) => void;
   resetEditor: () => void;
 }
@@ -263,6 +264,21 @@ export const useEditorStore = create<EditorState>()(
         }
         
         return count;
+      },
+      
+      // Apply rules to any text (used for transcription)
+      applyRulesToText: (text: string) => {
+        const { replacementRules } = get();
+        let processedText = text;
+        
+        replacementRules.forEach(rule => {
+          if (rule.autoApply) {
+            const regex = new RegExp(`\\b${rule.from}\\b`, 'gi');
+            processedText = processedText.replace(regex, rule.to);
+          }
+        });
+        
+        return processedText;
       },
       
       findAndReplace: (find, replace, all = false) => {

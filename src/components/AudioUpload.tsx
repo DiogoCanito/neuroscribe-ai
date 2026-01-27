@@ -16,7 +16,7 @@ export function AudioUpload({ onTranscriptionComplete }: AudioUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate } = useEditorStore();
+  const { selectedTemplate, applyRulesToText } = useEditorStore();
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,10 +57,12 @@ export function AudioUpload({ onTranscriptionComplete }: AudioUploadProps) {
       if (error) throw error;
 
       if (data?.text) {
-        onTranscriptionComplete(data.text);
+        // Apply replacement rules to transcribed text before adding to report
+        const processedText = applyRulesToText(data.text);
+        onTranscriptionComplete(processedText);
         toast({
           title: "Transcrição completa",
-          description: "O áudio foi transcrito com sucesso"
+          description: "O áudio foi transcrito e as regras de substituição foram aplicadas"
         });
         setSelectedFile(null);
         if (fileInputRef.current) {
