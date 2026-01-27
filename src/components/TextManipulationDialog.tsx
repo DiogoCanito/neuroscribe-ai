@@ -27,15 +27,12 @@ export function TextManipulationDialog() {
   const [open, setOpen] = useState(false);
   
   // Local state for new entries
-  const [findText, setFindText] = useState('');
-  const [replaceText, setReplaceText] = useState('');
   const [newRule, setNewRule] = useState({ from: '', to: '' });
   const [newTerm, setNewTerm] = useState('');
   
   const { 
     reportContent, 
     setReportContent,
-    findAndReplace,
     // Global state from store
     replacementRules,
     addReplacementRule,
@@ -44,16 +41,6 @@ export function TextManipulationDialog() {
     addCustomTerm,
     deleteCustomTerm,
   } = useEditorStore();
-
-  // Quick Find & Replace
-  const handleFindReplace = (all: boolean) => {
-    if (!findText) return;
-    findAndReplace(findText, replaceText, all);
-    toast({
-      title: "Substituição realizada",
-      description: all ? "Todas as ocorrências substituídas" : "Primeira ocorrência substituída"
-    });
-  };
 
   // Add new rule
   const handleAddRule = () => {
@@ -147,43 +134,6 @@ export function TextManipulationDialog() {
           
           {/* Tab: Find & Replace */}
           <TabsContent value="find-replace" className="space-y-4 mt-4">
-            {/* Quick Find & Replace */}
-            <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-              <h4 className="text-sm font-medium">Localizar e Substituir (Uma vez)</h4>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Localizar..."
-                  value={findText}
-                  onChange={(e) => setFindText(e.target.value)}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder="Substituir por..."
-                  value={replaceText}
-                  onChange={(e) => setReplaceText(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => handleFindReplace(false)}
-                  disabled={!findText}
-                >
-                  Substituir
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => handleFindReplace(true)}
-                  disabled={!findText}
-                >
-                  Substituir Tudo
-                </Button>
-              </div>
-            </div>
-            
             {/* Replacement Rules */}
             <div className="space-y-3">
               <div>
