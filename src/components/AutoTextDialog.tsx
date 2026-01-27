@@ -21,12 +21,6 @@ import {
   MessageSquare
 } from 'lucide-react';
 
-interface VoiceCommand {
-  id: string;
-  keyword: string;
-  text: string;
-}
-
 interface AutoTextDialogProps {
   disabled?: boolean;
 }
@@ -34,23 +28,16 @@ interface AutoTextDialogProps {
 export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [newCommand, setNewCommand] = useState({ keyword: '', text: '' });
   
   const { 
     selectedTemplate,
     reportContent,
-    setReportContent
+    setReportContent,
+    voiceCommands,
+    addVoiceCommand,
+    deleteVoiceCommand,
   } = useEditorStore();
-
-  // Global voice commands
-  const [commands, setCommands] = useState<VoiceCommand[]>([
-    { id: '1', keyword: 'conclusão normal', text: 'Exame sem alterações significativas. Achados de características normais.' },
-    { id: '2', keyword: 'técnica padrão', text: 'Estudo realizado em equipamento de 1.5T, com obtenção de sequências ponderadas em T1, T2 e STIR.' },
-    { id: '3', keyword: 'sem derrame', text: 'Sem evidência de derrame articular significativo.' },
-    { id: '4', keyword: 'alinhamento normal', text: 'Mantido o alinhamento fisiológico.' },
-    { id: '5', keyword: 'impressão normal', text: 'Estudo dentro dos limites da normalidade.' },
-  ]);
-
-  const [newCommand, setNewCommand] = useState({ keyword: '', text: '' });
 
   const handleAddCommand = () => {
     if (!newCommand.keyword.trim() || !newCommand.text.trim()) {
@@ -62,22 +49,16 @@ export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
       return;
     }
 
-    setCommands([...commands, {
-      id: Date.now().toString(),
+    addVoiceCommand({
       keyword: newCommand.keyword.toLowerCase().trim(),
       text: newCommand.text.trim()
-    }]);
-    setNewCommand({ keyword: '', text: '' });
+    });
     
+    setNewCommand({ keyword: '', text: '' });
     toast({
       title: "Comando criado",
       description: `Diga "${newCommand.keyword}" para inserir o texto`
     });
-  };
-
-  const handleDeleteCommand = (id: string) => {
-    setCommands(commands.filter(c => c.id !== id));
-    toast({ title: "Comando removido" });
   };
 
   const handleInsertText = (text: string) => {
@@ -109,44 +90,55 @@ export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
         <div className="space-y-6">
           {/* Commands list */}
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">Comandos Globais</h4>
-            <p className="text-xs text-muted-foreground">
-              Estes comandos funcionam em todos os templates. Clique para inserir ou diga a palavra-chave durante a gravação.
-            </p>
+            <div>
+              <h4 className="text-sm font-medium">Comandos Globais</h4>
+              <p className="text-xs text-muted-foreground">
+                Comandos guardados que funcionam em todos os templates. Clique para inserir.
+              </p>
+            </div>
             
             <ScrollArea className="h-48 rounded-md border p-2">
               <div className="space-y-2">
-                {commands.map((command) => (
-                  <div 
-                    key={command.id}
-                    className="flex items-start gap-3 p-2 bg-muted/30 rounded text-sm group"
-                  >
-                    <Badge variant="outline" className="shrink-0">
-                      "{command.keyword}"
-                    </Badge>
-                    <p className="flex-1 text-muted-foreground line-clamp-2">
-                      {command.text}
-                    </p>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => handleInsertText(command.text)}
-                      >
-                        <Zap className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => handleDeleteCommand(command.id)}
-                      >
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </Button>
+                {voiceCommands.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum comando criado. Adicione abaixo.
+                  </p>
+                ) : (
+                  voiceCommands.map((command) => (
+                    <div 
+                      key={command.id}
+                      className="flex items-start gap-3 p-2 bg-muted/30 rounded text-sm group"
+                    >
+                      <Badge variant="outline" className="shrink-0">
+                        "{command.keyword}"
+                      </Badge>
+                      <p className="flex-1 text-muted-foreground line-clamp-2">
+                        {command.text}
+                      </p>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleInsertText(command.text)}
+                        >
+                          <Zap className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            deleteVoiceCommand(command.id);
+                            toast({ title: "Comando removido" });
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </ScrollArea>
           </div>
@@ -184,7 +176,7 @@ export function AutoTextDialog({ disabled }: AutoTextDialogProps) {
             <ul className="list-disc list-inside space-y-0.5">
               <li>Diga a palavra-chave durante a gravação para inserir o texto</li>
               <li>Clique em <Zap className="w-3 h-3 inline" /> para inserir manualmente</li>
-              <li>Os comandos são globais e funcionam em qualquer template</li>
+              <li>Os comandos são guardados e funcionam em todos os templates</li>
             </ul>
           </div>
         </div>

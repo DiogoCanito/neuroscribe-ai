@@ -10,27 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEditorStore } from '@/stores/editorStore';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Search, 
   Replace, 
   Highlighter, 
   List, 
   Plus, 
   Trash2, 
   Edit2,
-  Save,
+  Zap,
   X
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface ReplacementRule {
-  id: string;
-  from: string;
-  to: string;
-  autoApply: boolean;
-}
 
 interface TextManipulationDialogProps {
   disabled?: boolean;
@@ -40,34 +32,29 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
-  // Find & Replace state
+  // Local state for new entries
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
-  const [rules, setRules] = useState<ReplacementRule[]>([
-    { id: '1', from: 'pex', to: 'por exemplo', autoApply: true },
-    { id: '2', from: 'dx', to: 'diagnóstico', autoApply: true },
-    { id: '3', from: 'hx', to: 'história', autoApply: false },
-  ]);
-  const [editingRule, setEditingRule] = useState<string | null>(null);
-  const [newRule, setNewRule] = useState({ from: '', to: '', autoApply: false });
-  
-  // Custom terms state
-  const [customTerms, setCustomTerms] = useState<string[]>([
-    'Sem alterações significativas',
-    'Estudo comparativo',
-    'Aspetos pós-operatórios',
-    'Em contexto clínico',
-  ]);
+  const [newRule, setNewRule] = useState({ from: '', to: '', autoApply: true });
   const [newTerm, setNewTerm] = useState('');
   
   const { 
     reportContent, 
     setReportContent,
     findAndReplace,
-    selectedTemplate
+    selectedTemplate,
+    // Global state from store
+    replacementRules,
+    addReplacementRule,
+    updateReplacementRule,
+    deleteReplacementRule,
+    applyReplacementRules,
+    customTerms,
+    addCustomTerm,
+    deleteCustomTerm,
   } = useEditorStore();
 
-  // Find & Replace handlers
+  // Quick Find & Replace
   const handleFindReplace = (all: boolean) => {
     if (!findText) return;
     findAndReplace(findText, replaceText, all);
@@ -77,8 +64,9 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
     });
   };
 
+  // Add new rule
   const handleAddRule = () => {
-    if (!newRule.from || !newRule.to) {
+    if (!newRule.from.trim() || !newRule.to.trim()) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -87,41 +75,23 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
       return;
     }
     
-    setRules([...rules, { 
-      id: Date.now().toString(), 
-      ...newRule 
-    }]);
-    setNewRule({ from: '', to: '', autoApply: false });
+    addReplacementRule({
+      from: newRule.from.trim(),
+      to: newRule.to.trim(),
+      autoApply: newRule.autoApply
+    });
+    
+    setNewRule({ from: '', to: '', autoApply: true });
     toast({
-      title: "Regra adicionada",
+      title: "Regra criada",
       description: `"${newRule.from}" → "${newRule.to}"`
     });
   };
 
-  const handleDeleteRule = (id: string) => {
-    setRules(rules.filter(r => r.id !== id));
-    toast({
-      title: "Regra removida"
-    });
-  };
-
+  // Apply all auto rules
   const handleApplyRules = () => {
-    let newContent = reportContent;
-    let count = 0;
-    
-    rules.forEach(rule => {
-      if (rule.autoApply) {
-        const regex = new RegExp(`\\b${rule.from}\\b`, 'gi');
-        const matches = newContent.match(regex);
-        if (matches) {
-          count += matches.length;
-          newContent = newContent.replace(regex, rule.to);
-        }
-      }
-    });
-    
+    const count = applyReplacementRules();
     if (count > 0) {
-      setReportContent(newContent);
       toast({
         title: "Regras aplicadas",
         description: `${count} substituições realizadas`
@@ -157,26 +127,18 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
     });
   };
 
-  // Custom terms handlers
+  // Terms handlers
   const handleAddTerm = () => {
     if (!newTerm.trim()) return;
-    setCustomTerms([...customTerms, newTerm.trim()]);
+    addCustomTerm(newTerm.trim());
     setNewTerm('');
-    toast({
-      title: "Termo adicionado"
-    });
-  };
-
-  const handleDeleteTerm = (index: number) => {
-    setCustomTerms(customTerms.filter((_, i) => i !== index));
+    toast({ title: "Termo adicionado" });
   };
 
   const handleInsertTerm = (term: string) => {
     setReportContent(reportContent + ' ' + term);
     setOpen(false);
-    toast({
-      title: "Termo inserido"
-    });
+    toast({ title: "Termo inserido" });
   };
 
   return (
@@ -216,7 +178,7 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
           <TabsContent value="find-replace" className="space-y-4 mt-4">
             {/* Quick Find & Replace */}
             <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-              <h4 className="text-sm font-medium">Localizar e Substituir</h4>
+              <h4 className="text-sm font-medium">Localizar e Substituir (Uma vez)</h4>
               <div className="flex gap-2">
                 <Input
                   placeholder="Localizar..."
@@ -254,88 +216,105 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
             {/* Replacement Rules */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Regras de Substituição Automática</h4>
+                <div>
+                  <h4 className="text-sm font-medium">Regras de Substituição</h4>
+                  <p className="text-xs text-muted-foreground">Regras globais guardadas para todos os templates</p>
+                </div>
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm"
                   onClick={handleApplyRules}
                   className="gap-1"
                 >
-                  <Save className="w-3 h-3" />
+                  <Zap className="w-3 h-3" />
                   Aplicar Regras
                 </Button>
               </div>
               
               <ScrollArea className="h-40 rounded-md border p-2">
                 <div className="space-y-2">
-                  {rules.map((rule) => (
-                    <div 
-                      key={rule.id}
-                      className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm"
-                    >
-                      <span className="font-mono flex-1">{rule.from}</span>
-                      <span className="text-muted-foreground">→</span>
-                      <span className="flex-1">{rule.to}</span>
-                      <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <input
-                          type="checkbox"
-                          checked={rule.autoApply}
-                          onChange={(e) => {
-                            setRules(rules.map(r => 
-                              r.id === rule.id 
-                                ? { ...r, autoApply: e.target.checked }
-                                : r
-                            ));
-                          }}
-                          className="rounded"
-                        />
-                        Auto
-                      </label>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => handleDeleteRule(rule.id)}
+                  {replacementRules.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhuma regra criada. Adicione abaixo.
+                    </p>
+                  ) : (
+                    replacementRules.map((rule) => (
+                      <div 
+                        key={rule.id}
+                        className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm group"
                       >
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
+                        <span className="font-mono bg-background px-2 py-0.5 rounded">{rule.from}</span>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="flex-1">{rule.to}</span>
+                        <div className="flex items-center gap-1">
+                          <Checkbox
+                            checked={rule.autoApply}
+                            onCheckedChange={(checked) => {
+                              updateReplacementRule(rule.id, { autoApply: !!checked });
+                            }}
+                            id={`auto-${rule.id}`}
+                          />
+                          <label htmlFor={`auto-${rule.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                            Auto
+                          </label>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            deleteReplacementRule(rule.id);
+                            toast({ title: "Regra removida" });
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
               
               {/* Add new rule */}
-              <div className="flex gap-2 items-center">
-                <Input
-                  placeholder="Palavra..."
-                  value={newRule.from}
-                  onChange={(e) => setNewRule({ ...newRule, from: e.target.value })}
-                  className="flex-1"
-                />
-                <span className="text-muted-foreground">→</span>
-                <Input
-                  placeholder="Substituir por..."
-                  value={newRule.to}
-                  onChange={(e) => setNewRule({ ...newRule, to: e.target.value })}
-                  className="flex-1"
-                />
-                <label className="flex items-center gap-1 text-xs whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={newRule.autoApply}
-                    onChange={(e) => setNewRule({ ...newRule, autoApply: e.target.checked })}
-                    className="rounded"
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
+                <p className="text-xs font-medium">Nova Regra</p>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Quando eu disser..."
+                    value={newRule.from}
+                    onChange={(e) => setNewRule({ ...newRule, from: e.target.value })}
+                    className="flex-1"
                   />
-                  Auto
-                </label>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={handleAddRule}
-                  disabled={!newRule.from || !newRule.to}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                  <span className="text-muted-foreground">→</span>
+                  <Input
+                    placeholder="Escreve..."
+                    value={newRule.to}
+                    onChange={(e) => setNewRule({ ...newRule, to: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={newRule.autoApply}
+                      onCheckedChange={(checked) => setNewRule({ ...newRule, autoApply: !!checked })}
+                      id="new-auto"
+                    />
+                    <label htmlFor="new-auto" className="text-xs text-muted-foreground cursor-pointer">
+                      Aplicar automaticamente
+                    </label>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAddRule}
+                    disabled={!newRule.from.trim() || !newRule.to.trim()}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar
+                  </Button>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -363,34 +342,45 @@ export function TextManipulationDialog({ disabled }: TextManipulationDialogProps
           {/* Tab: Frequent Terms */}
           <TabsContent value="terms" className="space-y-4 mt-4">
             <div className="space-y-3">
-              <h4 className="text-sm font-medium">Termos Frequentemente Utilizados</h4>
-              <p className="text-xs text-muted-foreground">
-                Clique num termo para inserir no relatório. Personalize a lista conforme necessário.
-              </p>
+              <div>
+                <h4 className="text-sm font-medium">Termos Frequentemente Utilizados</h4>
+                <p className="text-xs text-muted-foreground">
+                  Clique num termo para inserir no relatório. Lista guardada globalmente.
+                </p>
+              </div>
               
               <ScrollArea className="h-48 rounded-md border p-2">
                 <div className="space-y-1">
-                  {customTerms.map((term, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center gap-2 group"
-                    >
-                      <button
-                        onClick={() => handleInsertTerm(term)}
-                        className="flex-1 text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors"
+                  {customTerms.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum termo guardado. Adicione abaixo.
+                    </p>
+                  ) : (
+                    customTerms.map((term, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center gap-2 group"
                       >
-                        {term}
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleDeleteTerm(index)}
-                      >
-                        <X className="w-3 h-3 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  ))}
+                        <button
+                          onClick={() => handleInsertTerm(term)}
+                          className="flex-1 text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors"
+                        >
+                          {term}
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            deleteCustomTerm(index);
+                            toast({ title: "Termo removido" });
+                          }}
+                        >
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
               
