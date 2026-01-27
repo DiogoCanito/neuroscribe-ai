@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -22,6 +22,7 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
   } = useEditorStore();
   
   const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
   const accumulatedTranscriptRef = useRef<string>('');
   
   const {
@@ -50,7 +51,8 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
     onCommittedTranscript: (text) => {
       // Accumulate transcriptions for AI processing later
       const processedText = applyRulesToText(text);
-      accumulatedTranscriptRef.current += ' ' + processedText;
+      accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + processedText;
+      setLiveTranscript(accumulatedTranscriptRef.current);
       // Show live transcription in report for feedback
       onTranscriptionUpdate(processedText);
       setOriginalTranscription(accumulatedTranscriptRef.current);
@@ -65,6 +67,7 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
 
   const handleStart = useCallback(async () => {
     accumulatedTranscriptRef.current = '';
+    setLiveTranscript('');
     await startRecording();
     await connect();
   }, [startRecording, connect]);
@@ -241,10 +244,22 @@ export function RecordingControls({ onTranscriptionUpdate }: RecordingControlsPr
         )}
       </div>
 
-      {/* Partial transcription preview */}
-      {partialTranscript && (
-        <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-          <p className="text-sm text-muted-foreground italic">{partialTranscript}</p>
+      {/* Live transcription display during recording */}
+      {(isRecording || isConnected) && (
+        <div className="mt-2 p-4 bg-card rounded-lg border border-border min-h-[100px] max-h-[200px] overflow-y-auto shadow-sm">
+          <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+            Transcrição em tempo real
+          </p>
+          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+            {liveTranscript}
+            {partialTranscript && (
+              <span className="text-primary/70 italic"> {partialTranscript}</span>
+            )}
+            {!liveTranscript && !partialTranscript && (
+              <span className="text-muted-foreground italic">A aguardar fala...</span>
+            )}
+          </p>
         </div>
       )}
 
