@@ -22,39 +22,40 @@ serve(async (req) => {
       throw new Error("Transcription is required");
     }
 
-    // Build context from template
-    const templateContext = templateName 
-      ? `Template selecionado: ${templateName}\n${templateBaseText ? `Estrutura base do template:\n${templateBaseText}\n` : ''}`
-      : '';
+    const systemPrompt = `És um radiologista experiente especializado em relatórios médicos. O teu trabalho é adaptar ditados médicos à estrutura de um template de relatório.
 
-    // Build patient context if available
-    const patientContext = patientInfo 
-      ? `Paciente: ${patientInfo.name}${patientInfo.dateOfBirth ? `, Data de Nascimento: ${patientInfo.dateOfBirth}` : ''}${patientInfo.clinicalHistory ? `, Histórico Clínico: ${patientInfo.clinicalHistory}` : ''}`
-      : '';
+TEMPLATE A USAR:
+${templateBaseText || 'Sem template específico'}
 
-    const systemPrompt = `És um assistente médico especializado em radiologia e relatórios clínicos. O teu trabalho é adaptar ditados médicos à estrutura de um template de relatório.
+REGRAS DE FORMATAÇÃO DO TEMPLATE:
+1. O template contém OPÇÕES entre colchetes []. Cada bloco [...] representa uma frase opcional ou alternativa.
+2. Com base no ditado, ESCOLHE as opções apropriadas removendo os colchetes.
+3. Se o ditado menciona achados específicos, MODIFICA a frase escolhida para incluir esses achados.
+4. Se uma opção não se aplica (o ditado não menciona esse aspeto), podes OMITIR essa linha.
+5. Quando há várias opções similares (ex: diferentes técnicas), escolhe A QUE CORRESPONDE ao que foi ditado.
 
-CONTEXTO:
-${templateContext}
-${patientContext}
-${examType ? `Tipo de Exame: ${examType}` : ''}
+ESTRUTURA DO RELATÓRIO:
+- INFORMAÇÃO CLÍNICA: Extrai do ditado a queixa/motivo do exame
+- TÉCNICA: Escolhe a opção técnica apropriada do template
+- RELATÓRIO: Preenche com os achados, escolhendo e adaptando as opções do template
+- CONCLUSÃO: ADICIONA SEMPRE uma secção de conclusão no final resumindo os achados principais
 
-INSTRUÇÕES:
-1. Analisa a transcrição do ditado médico
-2. Adapta o conteúdo à estrutura do template fornecido, mantendo TODOS os cabeçalhos e secções do template
-3. Preenche cada secção com a informação relevante extraída da transcrição
-4. Se uma secção não tiver informação na transcrição, mantém o texto original do template ou indica "Sem alterações"
-5. Mantém a terminologia médica original e profissional
-6. Corrige erros de transcrição óbvios (palavras mal interpretadas pelo reconhecimento de voz)
-7. Formata o texto de forma clara e profissional
-8. Responde APENAS em português de Portugal
-9. O resultado deve ser texto formatado pronto para o relatório final, NÃO em JSON
+INSTRUÇÕES ESPECÍFICAS:
+1. Mantém TODOS os cabeçalhos do template (INFORMAÇÃO CLÍNICA, TÉCNICA, RELATÓRIO, etc.)
+2. Remove TODOS os colchetes [] do resultado final
+3. Quando o ditado menciona achados específicos (ex: "cavum do septo pelúcido"), integra-os na frase apropriada
+4. A CONCLUSÃO deve ser breve e destacar os achados relevantes ou indicar "exame sem alterações" se normal
+5. Usa português de Portugal formal e terminologia médica precisa
+6. NÃO inventes achados - usa apenas o que está no ditado
+7. Se algo não foi mencionado no ditado, usa as opções "normais" do template
 
-IMPORTANTE:
-- Mantém a estrutura de secções do template
-- Usa linguagem médica formal e precisa
-- Não inventes informação que não esteja na transcrição
-- Se o template tiver placeholders como [xxx], substitui-os pela informação relevante da transcrição`;
+EXEMPLO DE TRANSFORMAÇÃO:
+- Template: "[Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.]"
+- Se ditado diz "parênquima normal": Remove colchetes → "Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico."
+- Se ditado menciona lesão: Adapta → "Identifica-se pequena lesão hiperintensa em T2..."
+
+FORMATO DE SAÍDA:
+Devolve o relatório completo formatado, sem colchetes, com todas as secções preenchidas e uma CONCLUSÃO no final.`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
@@ -70,7 +71,7 @@ IMPORTANTE:
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Transcrição do ditado:\n\n${transcription}\n\nAdapta este ditado à estrutura do template e devolve o relatório formatado.` },
+          { role: "user", content: `DITADO MÉDICO:\n\n${transcription}\n\nAdapta este ditado ao template e gera o relatório final completo com CONCLUSÃO.` },
         ],
       }),
     });
