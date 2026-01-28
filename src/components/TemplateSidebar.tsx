@@ -248,13 +248,10 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
 
   return (
     <>
-      <div className="w-72 h-full bg-sidebar flex flex-col border-r border-sidebar-border">
-        <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+      <div className="w-56 h-full bg-sidebar flex flex-col border-r border-sidebar-border">
+        <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Templates</h2>
-            <p className="text-xs text-sidebar-foreground/60 mt-1">
-              Selecione um template para começar
-            </p>
+            <h2 className="text-sm font-semibold text-sidebar-foreground">Templates</h2>
           </div>
           <Button
             variant="ghost"

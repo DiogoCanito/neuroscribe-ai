@@ -59,11 +59,24 @@ export function RichTextEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
 
+  // Convert plain text with newlines to HTML
+  const textToHtml = (text: string) => {
+    if (!text) return '';
+    // If already HTML, return as-is
+    if (text.includes('<') && text.includes('>')) return text;
+    // Convert plain text newlines to HTML
+    return text
+      .split('\n\n')
+      .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
+      .join('');
+  };
+
   // Sync external value changes
   useEffect(() => {
     if (editorRef.current && !isInternalChange.current) {
-      if (editorRef.current.innerHTML !== value) {
-        editorRef.current.innerHTML = value;
+      const htmlValue = textToHtml(value);
+      if (editorRef.current.innerHTML !== htmlValue) {
+        editorRef.current.innerHTML = htmlValue;
       }
     }
     isInternalChange.current = false;

@@ -156,24 +156,14 @@ export default function ReportEditorPage() {
 
         {/* Editor Area */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Recording Controls + Tools */}
-          <div className="shrink-0 p-3 border-b border-border bg-card space-y-3">
-            {/* Recording and Upload Row */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <RecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
-              </div>
-              <div className="w-64 shrink-0">
-                <AudioUpload onTranscriptionComplete={handleTranscriptionUpdate} />
-              </div>
-            </div>
-            
-            {/* Text Tools Row */}
-            <div className="flex items-center gap-3 pt-2 border-t border-border/50">
-              <span className="text-xs text-muted-foreground">Ferramentas:</span>
-              <TextManipulationDialog />
-              <AutoTextDialog />
-            </div>
+          {/* Recording Controls + Tools - Compact Row */}
+          <div className="shrink-0 px-3 py-2 border-b border-border bg-card flex items-center gap-3 flex-wrap">
+            <RecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
+            <div className="w-px h-6 bg-border" />
+            <AudioUpload onTranscriptionComplete={handleTranscriptionUpdate} />
+            <div className="w-px h-6 bg-border" />
+            <TextManipulationDialog />
+            <AutoTextDialog />
           </div>
 
           {/* Report Editor */}
