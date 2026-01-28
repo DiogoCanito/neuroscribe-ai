@@ -66,9 +66,12 @@ serve(async (req) => {
     }
 
     const transcription = await response.json();
+    
+    console.log("Transcription received, text length:", transcription.text?.length || 0);
 
+    // Return only the raw text - nothing else
     return new Response(
-      JSON.stringify(transcription),
+      JSON.stringify({ text: transcription.text }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
