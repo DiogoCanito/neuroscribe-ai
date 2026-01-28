@@ -136,7 +136,7 @@ export function RichTextEditor({
       type="button"
       variant="ghost"
       size="sm"
-      className="h-7 w-7 p-0"
+      className="h-6 w-6 p-0"
       onClick={onClick}
       disabled={disabled}
       title={title}
@@ -146,19 +146,19 @@ export function RichTextEditor({
   );
 
   const Separator = () => (
-    <div className="h-5 w-px bg-border mx-1" />
+    <div className="h-4 w-px bg-border mx-0.5" />
   );
 
   return (
     <div className={cn("flex flex-col h-full border rounded-md bg-background", className)}>
-      {/* Toolbar */}
-      <div className="flex items-center gap-1 p-1.5 border-b bg-muted/30 flex-wrap">
+      {/* Compact Toolbar */}
+      <div className="flex items-center gap-0.5 p-1 border-b bg-muted/30 flex-wrap">
         {/* Undo/Redo */}
         <ToolbarButton onClick={() => execCommand('undo')} title="Desfazer (Ctrl+Z)">
-          <Undo className="w-3.5 h-3.5" />
+          <Undo className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('redo')} title="Refazer (Ctrl+Y)">
-          <Redo className="w-3.5 h-3.5" />
+          <Redo className="w-3 h-3" />
         </ToolbarButton>
 
         <Separator />
@@ -169,7 +169,7 @@ export function RichTextEditor({
           onValueChange={(font) => execCommand('fontName', font)}
           defaultValue="Arial"
         >
-          <SelectTrigger className="h-7 w-28 text-xs">
+          <SelectTrigger className="h-6 w-24 text-[10px]">
             <SelectValue placeholder="Fonte" />
           </SelectTrigger>
           <SelectContent>
@@ -178,6 +178,7 @@ export function RichTextEditor({
                 key={font.value} 
                 value={font.value}
                 style={{ fontFamily: font.value }}
+                className="text-xs"
               >
                 {font.label}
               </SelectItem>
@@ -191,12 +192,12 @@ export function RichTextEditor({
           onValueChange={(size) => execCommand('fontSize', size)}
           defaultValue="3"
         >
-          <SelectTrigger className="h-7 w-16 text-xs">
-            <SelectValue placeholder="Tamanho" />
+          <SelectTrigger className="h-6 w-14 text-[10px]">
+            <SelectValue placeholder="Tam" />
           </SelectTrigger>
           <SelectContent>
             {fontSizes.map((size) => (
-              <SelectItem key={size.value} value={size.value}>
+              <SelectItem key={size.value} value={size.value} className="text-xs">
                 {size.label}
               </SelectItem>
             ))}
@@ -207,56 +208,56 @@ export function RichTextEditor({
 
         {/* Text Formatting */}
         <ToolbarButton onClick={() => execCommand('bold')} title="Negrito (Ctrl+B)">
-          <Bold className="w-3.5 h-3.5" />
+          <Bold className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('italic')} title="Itálico (Ctrl+I)">
-          <Italic className="w-3.5 h-3.5" />
+          <Italic className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('underline')} title="Sublinhado (Ctrl+U)">
-          <Underline className="w-3.5 h-3.5" />
+          <Underline className="w-3 h-3" />
         </ToolbarButton>
 
         <Separator />
 
         {/* Alignment */}
         <ToolbarButton onClick={() => execCommand('justifyLeft')} title="Alinhar à esquerda">
-          <AlignLeft className="w-3.5 h-3.5" />
+          <AlignLeft className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('justifyCenter')} title="Centrar">
-          <AlignCenter className="w-3.5 h-3.5" />
+          <AlignCenter className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('justifyRight')} title="Alinhar à direita">
-          <AlignRight className="w-3.5 h-3.5" />
+          <AlignRight className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('justifyFull')} title="Justificar">
-          <AlignJustify className="w-3.5 h-3.5" />
+          <AlignJustify className="w-3 h-3" />
         </ToolbarButton>
 
         <Separator />
 
         {/* Lists */}
         <ToolbarButton onClick={() => execCommand('insertUnorderedList')} title="Lista com marcas">
-          <List className="w-3.5 h-3.5" />
+          <List className="w-3 h-3" />
         </ToolbarButton>
         <ToolbarButton onClick={() => execCommand('insertOrderedList')} title="Lista numerada">
-          <ListOrdered className="w-3.5 h-3.5" />
+          <ListOrdered className="w-3 h-3" />
         </ToolbarButton>
       </div>
 
-      {/* Editor */}
+      {/* Editor - More compact text */}
       <div
         ref={editorRef}
         contentEditable={!disabled}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         className={cn(
-          "flex-1 p-3 overflow-auto text-sm leading-relaxed outline-none",
+          "flex-1 p-2 overflow-auto text-[11px] leading-relaxed outline-none",
           "focus:ring-0",
           disabled && "opacity-50 cursor-not-allowed",
           !value && "before:content-[attr(data-placeholder)] before:text-muted-foreground before:pointer-events-none"
         )}
         data-placeholder={placeholder}
-        style={{ minHeight: '200px' }}
+        style={{ minHeight: '150px' }}
         suppressContentEditableWarning
       />
     </div>

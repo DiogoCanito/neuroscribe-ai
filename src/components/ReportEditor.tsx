@@ -1,9 +1,11 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/stores/editorStore';
 import { frequentTerms } from '@/data/templates';
 import { RichTextEditor } from '@/components/RichTextEditor';
+import { TextManipulationDialog } from '@/components/TextManipulationDialog';
+import { AutoTextDialog } from '@/components/AutoTextDialog';
 import { 
   Search, 
   Copy, 
@@ -20,7 +22,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useState } from 'react';
 
 interface ReportEditorProps {
   onExportPDF: () => void;
@@ -69,7 +70,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
   }, [findText, replaceText, findAndReplace, toast]);
 
   const handleInsertTerm = useCallback((term: string) => {
-    // Insert at current selection in the rich text editor
     document.execCommand('insertText', false, term);
   }, []);
 
@@ -83,52 +83,57 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
-      {/* Toolbar */}
-      <div className="shrink-0 flex items-center gap-2 p-2 border-b border-border bg-muted/30">
+      {/* Compact Toolbar - All tools in one line */}
+      <div className="shrink-0 flex items-center gap-1 px-2 py-1 border-b border-border bg-muted/30">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowFindReplace(!showFindReplace)}
-          className="gap-1.5 h-7 text-xs"
+          className="gap-1 h-6 text-[11px] px-2"
         >
-          <Search className="w-3.5 h-3.5" />
+          <Search className="w-3 h-3" />
           Localizar
         </Button>
         
-        <div className="h-4 w-px bg-border" />
+        <div className="h-3 w-px bg-border" />
         
-        <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-1.5 h-7 text-xs">
-          <Copy className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-1 h-6 text-[11px] px-2">
+          <Copy className="w-3 h-3" />
           Copiar
         </Button>
         
-        <Button variant="ghost" size="sm" onClick={onExportPDF} className="gap-1.5 h-7 text-xs">
-          <FileDown className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="sm" onClick={onExportPDF} className="gap-1 h-6 text-[11px] px-2">
+          <FileDown className="w-3 h-3" />
           PDF
         </Button>
+
+        <div className="h-3 w-px bg-border" />
+        
+        <TextManipulationDialog />
+        <AutoTextDialog />
       </div>
 
       {/* Find & Replace Bar */}
       {showFindReplace && (
-        <div className="shrink-0 flex items-center gap-2 p-2 border-b border-border bg-muted/20">
+        <div className="shrink-0 flex items-center gap-1.5 px-2 py-1 border-b border-border bg-muted/20">
           <Input
             placeholder="Localizar..."
             value={findText}
             onChange={(e) => setFindText(e.target.value)}
-            className="w-32 h-7 text-xs"
+            className="w-28 h-6 text-[11px]"
           />
           <Input
             placeholder="Substituir..."
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
-            className="w-32 h-7 text-xs"
+            className="w-28 h-6 text-[11px]"
           />
           <Button 
             variant="secondary" 
             size="sm" 
             onClick={() => handleFindReplace(false)}
             disabled={!findText}
-            className="h-7 text-xs"
+            className="h-6 text-[11px] px-2"
           >
             Substituir
           </Button>
@@ -137,25 +142,25 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
             size="sm" 
             onClick={() => handleFindReplace(true)}
             disabled={!findText}
-            className="h-7 text-xs"
+            className="h-6 text-[11px] px-2"
           >
             Tudo
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-6 w-6"
             onClick={() => setShowFindReplace(false)}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3 h-3" />
           </Button>
         </div>
       )}
 
       {/* Main content area */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Editor */}
-        <div className="flex-1 p-3 min-h-0 overflow-hidden">
+        {/* Editor - Maximum space */}
+        <div className="flex-1 p-2 min-h-0 overflow-hidden">
           <RichTextEditor
             value={reportContent}
             onChange={setReportContent}
@@ -168,38 +173,38 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
           />
         </div>
 
-        {/* Frequent Terms Sidebar */}
-        <div className="w-48 shrink-0 border-l border-border bg-muted/20 flex flex-col min-h-0 overflow-hidden">
+        {/* Compact Frequent Terms Sidebar */}
+        <div className="w-40 shrink-0 border-l border-border bg-muted/20 flex flex-col min-h-0 overflow-hidden">
           <Collapsible open={termsOpen} onOpenChange={setTermsOpen}>
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between p-2 rounded-none border-b border-border h-auto"
+                className="w-full justify-between px-2 py-1 rounded-none border-b border-border h-auto"
               >
-                <span className="text-xs font-medium">Termos Frequentes</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide">Termos</span>
                 {termsOpen ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
+                  <ChevronUp className="w-3 h-3" />
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3 h-3" />
                 )}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="flex-1 min-h-0 overflow-hidden">
-              <ScrollArea className="h-full max-h-[calc(100vh-400px)]">
-                <div className="p-2 space-y-2">
+              <ScrollArea className="h-full max-h-[calc(100vh-200px)]">
+                <div className="p-1.5 space-y-1.5">
                   {Object.entries(termsByCategory).map(([category, terms]) => (
                     <div key={category}>
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                      <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
                         {category}
                       </p>
-                      <div className="space-y-0.5">
+                      <div className="space-y-0">
                         {terms.map((term) => (
                           <button
                             key={term.id}
                             onClick={() => handleInsertTerm(term.term)}
                             disabled={!selectedTemplate}
                             className={cn(
-                              "w-full text-left px-2 py-1 text-[11px] rounded transition-colors",
+                              "w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors",
                               selectedTemplate 
                                 ? "hover:bg-accent/50 cursor-pointer" 
                                 : "opacity-50 cursor-not-allowed"

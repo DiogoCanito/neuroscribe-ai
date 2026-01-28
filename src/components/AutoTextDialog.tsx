@@ -65,9 +65,9 @@ export function AutoTextDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <MessageSquare className="w-4 h-4" />
-          AutoTexto
+        <Button variant="ghost" size="sm" className="gap-1 h-6 text-[11px] px-2">
+          <MessageSquare className="w-3 h-3" />
+          Auto
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh]">
