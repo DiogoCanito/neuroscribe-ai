@@ -271,12 +271,47 @@ export const useEditorStore = create<EditorState>()(
         const { replacementRules } = get();
         let processedText = text;
         
+        // First, apply punctuation rules (spoken punctuation to symbols)
+        const punctuationRules = [
+          { from: /\s*vírgula\s*/gi, to: ', ' },
+          { from: /\s*ponto\s*$/gi, to: '.' },
+          { from: /\s*ponto\s+/gi, to: '. ' },
+          { from: /\s*ponto de interrogação\s*/gi, to: '? ' },
+          { from: /\s*ponto de exclamação\s*/gi, to: '! ' },
+          { from: /\s*dois pontos\s*/gi, to: ': ' },
+          { from: /\s*ponto e vírgula\s*/gi, to: '; ' },
+          { from: /\s*abre parênteses\s*/gi, to: ' (' },
+          { from: /\s*fecha parênteses\s*/gi, to: ') ' },
+          { from: /\s*nova linha\s*/gi, to: '\n' },
+          { from: /\s*novo parágrafo\s*/gi, to: '\n\n' },
+        ];
+        
+        punctuationRules.forEach(rule => {
+          processedText = processedText.replace(rule.from, rule.to);
+        });
+        
+        // Capitalize first letter after periods
+        processedText = processedText.replace(/\.\s+([a-záàâãéèêíïóôõöúç])/gi, (match, letter) => {
+          return '. ' + letter.toUpperCase();
+        });
+        
+        // Capitalize first letter of text
+        if (processedText.length > 0) {
+          processedText = processedText.charAt(0).toUpperCase() + processedText.slice(1);
+        }
+        
+        // Then apply user-defined replacement rules
         replacementRules.forEach(rule => {
           if (rule.autoApply) {
             const regex = new RegExp(`\\b${rule.from}\\b`, 'gi');
             processedText = processedText.replace(regex, rule.to);
           }
         });
+        
+        // Clean up extra spaces
+        processedText = processedText.replace(/\s+/g, ' ').trim();
+        processedText = processedText.replace(/\s+\./g, '.');
+        processedText = processedText.replace(/\s+,/g, ',');
         
         return processedText;
       },
