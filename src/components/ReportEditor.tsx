@@ -1,15 +1,13 @@
-import { useRef, useEffect, useCallback } from 'react';
-import { Textarea } from '@/components/ui/textarea';
+import { useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/stores/editorStore';
 import { frequentTerms } from '@/data/templates';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import { 
   Search, 
-  Replace, 
   Copy, 
   FileDown, 
-  Highlighter,
   X,
   ChevronDown,
   ChevronUp
@@ -30,7 +28,6 @@ interface ReportEditorProps {
 
 export function ReportEditor({ onExportPDF }: ReportEditorProps) {
   const { toast } = useToast();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [termsOpen, setTermsOpen] = useState(true);
   
   const {
@@ -43,7 +40,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
     replaceText,
     setReplaceText,
     findAndReplace,
-    insertText,
     selectedTemplate
   } = useEditorStore();
 
@@ -73,26 +69,9 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
   }, [findText, replaceText, findAndReplace, toast]);
 
   const handleInsertTerm = useCallback((term: string) => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      const newContent = 
-        reportContent.slice(0, start) + 
-        term + 
-        reportContent.slice(end);
-      setReportContent(newContent);
-      
-      // Focus and move cursor
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(start + term.length, start + term.length);
-        }
-      }, 0);
-    } else {
-      insertText(term);
-    }
-  }, [reportContent, setReportContent, insertText]);
+    // Insert at current selection in the rich text editor
+    document.execCommand('insertText', false, term);
+  }, []);
 
   // Group terms by category
   const termsByCategory = frequentTerms.reduce((acc, term) => {
@@ -177,16 +156,15 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Editor */}
         <div className="flex-1 p-3 min-h-0 overflow-hidden">
-          <Textarea
-            ref={textareaRef}
+          <RichTextEditor
             value={reportContent}
-            onChange={(e) => setReportContent(e.target.value)}
+            onChange={setReportContent}
             placeholder={selectedTemplate 
               ? "O relatório será apresentado aqui. Comece a gravar para adicionar conteúdo."
               : "Selecione um template para começar..."
             }
-            className="h-full w-full resize-none font-mono text-sm leading-relaxed overflow-auto"
             disabled={!selectedTemplate}
+            className="h-full"
           />
         </div>
 
