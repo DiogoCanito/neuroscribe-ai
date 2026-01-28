@@ -235,7 +235,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   };
 
   const getModalityIcon = (iconName: string) => {
-    const iconProps = { className: "w-4 h-4" };
+    const iconProps = { className: "w-3 h-3" };
     switch (iconName) {
       case 'Scan': return <Scan {...iconProps} />;
       case 'Activity': return <Activity {...iconProps} />;
@@ -248,24 +248,22 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
 
   return (
     <>
-      <div className="w-56 h-full bg-sidebar flex flex-col border-r border-sidebar-border">
-        <div className="p-3 border-b border-sidebar-border flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-sidebar-foreground">Templates</h2>
-          </div>
+      <div className="w-48 h-full bg-sidebar flex flex-col border-r border-sidebar-border">
+        <div className="px-2 py-1.5 border-b border-sidebar-border flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-sidebar-foreground uppercase tracking-wide">Templates</span>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleAddModality}
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            className="h-5 w-5 text-sidebar-foreground/70 hover:text-sidebar-foreground"
             title="Adicionar Modalidade"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3 h-3" />
           </Button>
         </div>
         
         <ScrollArea className="flex-1">
-          <div className="p-2">
+          <div className="p-1">
             {templates.map((modality) => (
               <ModalityItem
                 key={modality.id}
@@ -360,47 +358,47 @@ function ModalityItem({
   getIcon
 }: ModalityItemProps) {
   return (
-    <div className="mb-1 group/modality">
+    <div className="mb-0.5 group/modality">
       <div className="flex items-center">
         <button
           onClick={onToggle}
-          className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          className="flex-1 flex items-center gap-1.5 px-2 py-1 rounded text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           {isExpanded ? (
-            <ChevronDown className="w-4 h-4 text-sidebar-foreground/60" />
+            <ChevronDown className="w-3 h-3 text-sidebar-foreground/60" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-sidebar-foreground/60" />
+            <ChevronRight className="w-3 h-3 text-sidebar-foreground/60" />
           )}
           {getIcon(modality.icon)}
-          <span className="font-medium text-sm">{modality.name}</span>
+          <span className="font-medium text-[11px]">{modality.name}</span>
         </button>
-        <div className="opacity-0 group-hover/modality:opacity-100 flex items-center gap-0.5 pr-2 transition-opacity">
+        <div className="opacity-0 group-hover/modality:opacity-100 flex items-center pr-1 transition-opacity">
           <button
             onClick={(e) => onEditModality(modality, e)}
-            className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
             title="Editar"
           >
-            <Pencil className="w-3 h-3" />
+            <Pencil className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={() => onAddRegion(modality.id)}
-            className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
             title="Adicionar Região"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={(e) => onDeleteModality(modality, e)}
-            className="p-1 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+            className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
             title="Eliminar"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-2.5 h-2.5" />
           </button>
         </div>
       </div>
       
       {isExpanded && (
-        <div className="ml-4 mt-1">
+        <div className="ml-3 mt-0.5">
           {modality.regions.map((region) => (
             <RegionItem
               key={region.id}
@@ -451,74 +449,74 @@ function RegionItem({
   onDeleteTemplate
 }: RegionItemProps) {
   return (
-    <div className="mb-1 group/region">
+    <div className="mb-0.5 group/region">
       <div className="flex items-center">
         <button
           onClick={onToggle}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors"
+          className="flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors"
         >
           {isExpanded ? (
-            <ChevronDown className="w-3 h-3 text-sidebar-foreground/50" />
+            <ChevronDown className="w-2.5 h-2.5 text-sidebar-foreground/50" />
           ) : (
-            <ChevronRight className="w-3 h-3 text-sidebar-foreground/50" />
+            <ChevronRight className="w-2.5 h-2.5 text-sidebar-foreground/50" />
           )}
-          <span className="text-sm">{region.name}</span>
+          <span className="text-[11px]">{region.name}</span>
         </button>
-        <div className="opacity-0 group-hover/region:opacity-100 flex items-center gap-0.5 pr-2 transition-opacity">
+        <div className="opacity-0 group-hover/region:opacity-100 flex items-center pr-1 transition-opacity">
           <button
             onClick={(e) => onEditRegion(modalityId, region, e)}
-            className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
             title="Editar"
           >
-            <Pencil className="w-3 h-3" />
+            <Pencil className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={() => onAddTemplate(modalityId, region.id)}
-            className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
             title="Adicionar Template"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={(e) => onDeleteRegion(modalityId, region, e)}
-            className="p-1 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+            className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
             title="Eliminar"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-2.5 h-2.5" />
           </button>
         </div>
       </div>
       
       {isExpanded && (
-        <div className="ml-5 mt-1 space-y-0.5">
+        <div className="ml-4 mt-0.5 space-y-0">
           {region.templates.map((template) => (
             <div key={template.id} className="flex items-center group/template">
               <button
                 onClick={() => onTemplateClick(template)}
                 className={cn(
-                  "flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors",
+                  "flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-colors",
                   selectedTemplateId === template.id
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
               >
-                <FileText className="w-3 h-3" />
+                <FileText className="w-2.5 h-2.5" />
                 <span className="truncate">{template.name}</span>
               </button>
-              <div className="opacity-0 group-hover/template:opacity-100 flex items-center gap-0.5 pr-2 transition-opacity">
+              <div className="opacity-0 group-hover/template:opacity-100 flex items-center pr-1 transition-opacity">
                 <button
                   onClick={(e) => onEditTemplate(modalityId, region.id, template, e)}
-                  className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                  className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
                   title="Editar"
                 >
-                  <Pencil className="w-3 h-3" />
+                  <Pencil className="w-2.5 h-2.5" />
                 </button>
                 <button
                   onClick={(e) => onDeleteTemplate(modalityId, region.id, template, e)}
-                  className="p-1 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+                  className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
                   title="Eliminar"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-2.5 h-2.5" />
                 </button>
               </div>
             </div>
@@ -528,3 +526,4 @@ function RegionItem({
     </div>
   );
 }
+

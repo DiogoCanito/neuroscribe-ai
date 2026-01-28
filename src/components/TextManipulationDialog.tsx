@@ -106,9 +106,9 @@ export function TextManipulationDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Edit2 className="w-4 h-4" />
-          Manipulação de Texto
+        <Button variant="ghost" size="sm" className="gap-1 h-6 text-[11px] px-2">
+          <Edit2 className="w-3 h-3" />
+          Texto
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh]">
