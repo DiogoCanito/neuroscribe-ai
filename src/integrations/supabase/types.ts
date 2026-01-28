@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      completed_reports: {
+        Row: {
+          audio_duration: number | null
+          audio_url: string | null
+          created_at: string
+          id: string
+          report_content: string
+          template_id: string | null
+          template_name: string
+          user_id: string
+        }
+        Insert: {
+          audio_duration?: number | null
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          report_content: string
+          template_id?: string | null
+          template_name: string
+          user_id: string
+        }
+        Update: {
+          audio_duration?: number | null
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          report_content?: string
+          template_id?: string | null
+          template_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
