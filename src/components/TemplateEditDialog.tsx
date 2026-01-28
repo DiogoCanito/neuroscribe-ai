@@ -9,8 +9,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TemplateRichTextEditor } from './TemplateRichTextEditor';
 
 type EditType = 'modality' | 'region' | 'template';
 type EditMode = 'add' | 'edit';
@@ -129,13 +129,11 @@ export function TemplateEditDialog({
           
           {type === 'template' && (
             <div className="space-y-2">
-              <Label htmlFor="baseText">Texto Base do Relatório</Label>
-              <Textarea
-                id="baseText"
+              <Label>Texto Base do Relatório</Label>
+              <TemplateRichTextEditor
                 value={baseText}
-                onChange={(e) => setBaseText(e.target.value)}
+                onChange={setBaseText}
                 placeholder="Insira o texto base do template..."
-                className="min-h-[200px] font-mono text-sm"
               />
             </div>
           )}
