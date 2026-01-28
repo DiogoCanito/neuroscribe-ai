@@ -1,12 +1,14 @@
 import { useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { supabase } from '@/integrations/supabase/client';
-import { Mic, Pause, Play, Square, Loader2, Sparkles } from 'lucide-react';
+import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CompactRecordingControlsProps {
   onTranscriptionUpdate: (text: string) => void;
@@ -23,6 +25,8 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const [testText, setTestText] = useState('');
+  const [testPopoverOpen, setTestPopoverOpen] = useState(false);
   const accumulatedTranscriptRef = useRef<string>('');
   
   const {
@@ -108,6 +112,17 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     }
   }, [stopRecording, disconnect, processWithAI]);
 
+  const handleTestSubmit = useCallback(async () => {
+    if (!testText.trim() || !selectedTemplate) return;
+    setOriginalTranscription(testText);
+    setTestPopoverOpen(false);
+    await processWithAI(testText);
+    toast({
+      title: "Teste executado",
+      description: "O texto foi processado como transcrição."
+    });
+  }, [testText, selectedTemplate, setOriginalTranscription, processWithAI, toast]);
+
   return (
     <div className="flex items-center gap-2">
       {/* Status indicator */}
@@ -168,6 +183,43 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
           </Button>
         </>
       )}
+
+      {/* Test Mode Button */}
+      <Popover open={testPopoverOpen} onOpenChange={setTestPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 h-7 text-xs px-2 text-muted-foreground"
+            disabled={!selectedTemplate || isProcessingAI}
+          >
+            <TestTube className="w-3 h-3" />
+            Teste
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80" align="start">
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium">
+              Cole texto para simular uma transcrição:
+            </p>
+            <Textarea
+              value={testText}
+              onChange={(e) => setTestText(e.target.value)}
+              placeholder="Ex: Informação clínica estadiamento de neoplasia do pulmão..."
+              className="min-h-[100px] text-xs"
+            />
+            <Button
+              onClick={handleTestSubmit}
+              disabled={!testText.trim() || isProcessingAI}
+              size="sm"
+              className="w-full gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Gerar Relatório
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

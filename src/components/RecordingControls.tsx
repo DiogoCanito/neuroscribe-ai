@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-interface RecordingControlsProps {
+export interface RecordingControlsProps {
   onTranscriptionUpdate: (text: string) => void;
 }
 
