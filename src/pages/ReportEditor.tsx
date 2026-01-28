@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TemplateSidebar } from '@/components/TemplateSidebar';
 import { RecordingControls } from '@/components/RecordingControls';
 import { ReportEditor } from '@/components/ReportEditor';
@@ -9,12 +10,14 @@ import { AutoTextDialog } from '@/components/AutoTextDialog';
 import { useEditorStore } from '@/stores/editorStore';
 import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
-import { FileText, RotateCcw } from 'lucide-react';
+import { FileText, RotateCcw, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 
 export default function ReportEditorPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { 
     selectedTemplate, 
     loadTemplate, 
@@ -23,6 +26,15 @@ export default function ReportEditorPage() {
     resetEditor,
     originalTranscription
   } = useEditorStore();
+
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+    toast({
+      title: "Sessão terminada",
+      description: "Até breve!"
+    });
+  }, [navigate, toast]);
 
   const handleTemplateSelect = useCallback((template: TemplateContent) => {
     loadTemplate(template);
@@ -128,6 +140,11 @@ export default function ReportEditorPage() {
           <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5 h-8">
             <RotateCcw className="w-4 h-4" />
             Limpar
+          </Button>
+
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1.5 h-8 text-muted-foreground hover:text-foreground">
+            <LogOut className="w-4 h-4" />
+            Sair
           </Button>
         </div>
       </header>
