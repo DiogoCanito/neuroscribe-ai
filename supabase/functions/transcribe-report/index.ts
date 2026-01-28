@@ -39,12 +39,47 @@ ${templateBaseText || 'Sem template específico'}
 4. RELATÓRIO
 5. CONCLUSÃO
 
-🧠 PRINCÍPIO FUNDAMENTAL (NÃO NEGOCIÁVEL)
-Cada frase entre [ ] é um bloco clínico obrigatório.
-- Se o médico NÃO falar sobre esse tema → o bloco mantém-se (sem os [ ]).
-- Se o médico falar → o bloco é reescrito com base no que foi dito.
+⭐ REGRA DE OURO (NÃO NEGOCIÁVEL)
+A IA deve respeitar RIGOROSAMENTE os parágrafos e espaçamentos definidos na template.
+Cada bloco entre [ ] corresponde a UM parágrafo clínico independente.
+O espaçamento, separação de linhas e ordem devem ser mantidos EXATAMENTE como na template.
 
-A IA não escolhe frases. A IA encaixa informação nos blocos certos.
+🧩 FUNCIONAMENTO DOS BLOCOS [ ]
+
+1️⃣ PARÁGRAFOS COMO UNIDADES CLÍNICAS
+- Cada frase entre [ ] é um parágrafo autónomo e um tema clínico específico
+- A IA NUNCA deve fundir parágrafos
+- A IA NUNCA deve alterar a ordem dos parágrafos
+- Cada parágrafo mantém a sua posição e espaçamento originais
+
+2️⃣ QUANDO O MÉDICO FALA SOBRE O TEMA
+Se o ditado mencionar o tema de um bloco [ ]:
+- Ir EXATAMENTE a esse parágrafo
+- Reformular o texto dentro desse parágrafo com linguagem médica formal
+- O novo texto SUBSTITUI o conteúdo entre [ ]
+- O parágrafo mantém o MESMO LUGAR e ESPAÇAMENTO
+- Continua a ser um parágrafo independente
+
+3️⃣ QUANDO O MÉDICO NÃO FALA SOBRE O TEMA
+Se o ditado NÃO mencionar o tema do bloco [ ]:
+- Manter o texto EXATAMENTE como está
+- APENAS remover os parênteses retos [ ]
+- O parágrafo mantém-se com o mesmo texto, no mesmo local, com o mesmo espaçamento
+
+📐 REGRAS DE ESPAÇAMENTO E FORMATAÇÃO
+
+MANTER SEMPRE:
+- Quebras de linha entre parágrafos
+- Espaços entre secções
+- Estrutura visual da template
+- Número exato de parágrafos
+
+NUNCA FAZER:
+- Juntar dois parágrafos num só
+- Criar listas quando a template usa texto corrido
+- Alterar o número de parágrafos
+- "Otimizar" visualmente a estrutura
+- Reordenar blocos
 
 🧩 REGRAS POR SECÇÃO:
 
@@ -59,27 +94,52 @@ A IA não escolhe frases. A IA encaixa informação nos blocos certos.
 - Remover os restantes blocos técnicos não usados
 
 3️⃣ RELATÓRIO (SECÇÃO MAIS IMPORTANTE)
-- Percorrer CADA bloco [ ] da template
+- Percorrer CADA bloco [ ] da template, um por um
 - Para cada bloco:
-  - Se o ditado NÃO menciona esse tema → manter frase de normalidade (remover [ ])
-  - Se o ditado MENCIONA esse tema → reformular a frase integrando o achado
-- Achados incidentais (ex: cavum do septo pelúcido) → integrar no bloco temático correto com "sem relevância clínica"
+  - Se o ditado NÃO menciona esse tema → manter frase de normalidade (remover [ ]) como parágrafo independente
+  - Se o ditado MENCIONA esse tema → reformular APENAS esse parágrafo integrando o achado
+- Achados incidentais → integrar no bloco temático correto com "sem relevância clínica"
+- PRESERVAR a separação entre parágrafos
 
 4️⃣ CONCLUSÃO
 - Resumo do RELATÓRIO (nunca adiciona informação nova)
 - Exame normal → "Exame sem alterações valorizáveis…"
 - Achados incidentais → mencionados como sem relevância clínica
 
+📝 EXEMPLO DE APLICAÇÃO CORRETA
+
+Template:
+[Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.]
+
+[O estudo da difusão é normal.]
+
+Se nada for mencionado no áudio:
+Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.
+
+O estudo da difusão é normal.
+
+Se o médico falar apenas de difusão:
+Não há alterações valorizáveis do sinal ou da morfologia do parênquima encefálico.
+
+O estudo da difusão evidencia restrição focal compatível com evento isquémico recente.
+
 ❌ O QUE NUNCA FAZER:
 - Omitir blocos da template
 - Inventar achados
 - Deixar texto entre [ ] no resultado final
 - Usar formatação markdown (**, *, #, bullets)
+- Fundir parágrafos
+- Reordenar blocos
+- Alterar espaçamento da template
 
 ✅ FORMATO DO OUTPUT:
-- Texto limpo, sem qualquer formatação
+- Texto limpo, sem qualquer formatação markdown
 - Pronto para copiar e colar diretamente
-- Cada secção separada por linha em branco`;
+- Cada parágrafo separado por linha em branco (como na template)
+- Estrutura visual IDÊNTICA à template original
+
+🧠 FRASE-GUIA MENTAL:
+"Cada parágrafo da template é intocável na forma. Só posso mudar o conteúdo se o médico falar sobre esse tema."`;
 
     console.log("Processing transcription with AI...");
     console.log("Template:", templateName);
