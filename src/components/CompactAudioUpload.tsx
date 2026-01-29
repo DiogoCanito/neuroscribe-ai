@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Loader2, X, FileAudio } from 'lucide-react';
+import { Upload, Loader2, X, FileAudio, Sparkles } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
 import {
   Popover,
@@ -18,10 +18,11 @@ interface CompactAudioUploadProps {
 export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUploadProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate, applyRulesToText } = useEditorStore();
+  const { selectedTemplate, applyRulesToText, setOriginalTranscription, setReportContent } = useEditorStore();
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,6 +39,41 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
       setSelectedFile(file);
     }
   }, [toast]);
+
+  const processWithAI = useCallback(async (transcription: string) => {
+    if (!selectedTemplate || !transcription.trim()) return;
+    
+    setIsProcessingAI(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('transcribe-report', {
+        body: {
+          transcription: transcription.trim(),
+          templateName: selectedTemplate.name,
+          templateBaseText: selectedTemplate.baseText,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.adaptedReport) {
+        setReportContent(data.adaptedReport);
+        toast({
+          title: "Relatório gerado",
+          description: "O áudio foi transcrito e estruturado de acordo com o template."
+        });
+      }
+    } catch (err) {
+      console.error('AI processing error:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro ao processar",
+        description: "Não foi possível adaptar o relatório."
+      });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  }, [selectedTemplate, setReportContent, toast]);
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile) return;
@@ -60,14 +96,16 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
 
       if (data?.text) {
         const processedText = applyRulesToText(data.text);
+        setOriginalTranscription(processedText);
         onTranscriptionComplete(processedText);
-        toast({
-          title: "Transcrição completa",
-          description: "Áudio transcrito com sucesso"
-        });
+        
+        // Close popover and clear file before AI processing
         setSelectedFile(null);
         setOpen(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Process with AI to generate structured report
+        await processWithAI(processedText);
       }
     } catch (err) {
       console.error('Transcription error:', err);
@@ -79,7 +117,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedFile, onTranscriptionComplete, toast, applyRulesToText]);
+  }, [selectedFile, onTranscriptionComplete, toast, applyRulesToText, setOriginalTranscription, processWithAI]);
 
   const handleClear = useCallback(() => {
     setSelectedFile(null);
@@ -132,7 +170,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
 
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || isProcessing}
+            disabled={!selectedFile || isProcessing || isProcessingAI}
             className="w-full gap-1.5 h-7 text-xs"
             size="sm"
           >
@@ -140,6 +178,11 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 A transcrever...
+              </>
+            ) : isProcessingAI ? (
+              <>
+                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                A gerar relatório...
               </>
             ) : (
               <>
