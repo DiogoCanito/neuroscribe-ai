@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { templates, voiceCommands } from '@/data/templates';
 import { useEditorStore } from '@/stores/editorStore';
 import { TemplateContent } from '@/types/templates';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // Speech Recognition types for browsers
 interface SpeechRecognitionEvent extends Event {
@@ -66,7 +66,6 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const { toast } = useToast();
   
   const { 
     loadTemplate, 
@@ -184,7 +183,7 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       setIsRecording(false);
       return;
     }
-  }, [voiceCommandsEnabled, findTemplateByName, loadTemplate, applyAutoText, setIsRecording, setIsPaused, toast]);
+  }, [voiceCommandsEnabled, findTemplateByName, loadTemplate, applyAutoText, setIsRecording, setIsPaused]);
 
   const startListening = useCallback(() => {
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -232,7 +231,7 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       title: "A ouvir comandos",
       description: "Diga 'Template [nome]' para selecionar."
     });
-  }, [isListening, processCommand, toast]);
+  }, [isListening, processCommand]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {

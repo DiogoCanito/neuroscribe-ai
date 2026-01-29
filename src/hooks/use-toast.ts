@@ -174,7 +174,7 @@ function useToast() {
         listeners.splice(index, 1);
       }
     };
-  }, [state]);
+  }, []); // Fixed: removed [state] dependency that was causing re-subscription on every state change
 
   return {
     ...state,
