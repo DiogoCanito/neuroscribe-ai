@@ -5,7 +5,7 @@ import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { supabase } from '@/integrations/supabase/client';
-import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,20 +24,23 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   } = useEditorStore();
   
   const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const [testText, setTestText] = useState('');
   const [testPopoverOpen, setTestPopoverOpen] = useState(false);
   const accumulatedTranscriptRef = useRef<string>('');
   
+  const audioRecorder = useAudioRecorder();
   const {
     isRecording,
     isPaused,
     duration,
+    audioBlob,
     startRecording,
     stopRecording,
     pauseRecording,
     resumeRecording,
-  } = useAudioRecorder();
+  } = audioRecorder;
 
   const {
     isConnecting,
@@ -64,7 +67,12 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     accumulatedTranscriptRef.current = '';
     setLiveTranscript('');
     await startRecording();
-    await connect();
+    // Try to connect realtime, but don't block on failure
+    try {
+      await connect();
+    } catch (err) {
+      console.warn('Realtime transcription failed to connect, will use batch fallback:', err);
+    }
   }, [startRecording, connect]);
 
   const processWithAI = useCallback(async (transcription: string) => {
@@ -102,13 +110,38 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     }
   }, [selectedTemplate, setReportContent, toast]);
 
+  // Fallback: transcribe audio using batch API
+  const transcribeAudioBatch = useCallback(async (blob: Blob): Promise<string | null> => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.webm');
+      formData.append('language_code', 'por');
+      formData.append('tag_audio_events', 'false');
+      formData.append('diarize', 'false');
+
+      const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      return data?.text || null;
+    } catch (err) {
+      console.error('Batch transcription error:', err);
+      return null;
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
+
   const handleStop = useCallback(async () => {
+    // Stop recording first - this triggers audioBlob to be set
     stopRecording();
     disconnect();
 
-    // When the user stops, it's common to still have relevant text in the partial transcript
-    // that hasn't been committed yet (VAD / timing). Include it so the AI always runs.
-    const finalText = [
+    // Check if we have realtime transcription
+    const realtimeText = [
       accumulatedTranscriptRef.current,
       partialTranscript ? applyRulesToText(partialTranscript) : '',
     ]
@@ -117,20 +150,52 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       .join(' ')
       .trim();
 
-    if (finalText) {
-      accumulatedTranscriptRef.current = finalText;
-      setLiveTranscript(finalText);
-      setOriginalTranscription(finalText);
-      await processWithAI(finalText);
+    if (realtimeText) {
+      accumulatedTranscriptRef.current = realtimeText;
+      setLiveTranscript(realtimeText);
+      setOriginalTranscription(realtimeText);
+      await processWithAI(realtimeText);
       return;
     }
 
+    // Fallback: wait a bit for audioBlob to be ready, then use batch transcription
     toast({
-      variant: 'destructive',
-      title: 'Sem transcrição',
-      description: 'Não foi captado texto suficiente para gerar o relatório.',
+      title: "A transcrever áudio...",
+      description: "A transcrição em tempo real não funcionou, a usar fallback."
     });
-  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, processWithAI, toast]);
+
+    // Wait for audioBlob to be available (MediaRecorder.onstop is async)
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Get the current audioBlob from the recorder
+    const currentBlob = audioRecorder.audioBlob;
+    
+    if (!currentBlob) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem áudio',
+        description: 'Não foi possível captar o áudio da gravação.',
+      });
+      return;
+    }
+
+    const batchText = await transcribeAudioBatch(currentBlob);
+    
+    if (!batchText || !batchText.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem transcrição',
+        description: 'Não foi captado texto suficiente para gerar o relatório.',
+      });
+      return;
+    }
+
+    const processedBatchText = applyRulesToText(batchText);
+    accumulatedTranscriptRef.current = processedBatchText;
+    setLiveTranscript(processedBatchText);
+    setOriginalTranscription(processedBatchText);
+    await processWithAI(processedBatchText);
+  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, processWithAI, toast, transcribeAudioBatch, audioRecorder]);
 
   const handleTestSubmit = useCallback(async () => {
     if (!testText.trim() || !selectedTemplate) return;
@@ -143,17 +208,26 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     });
   }, [testText, selectedTemplate, setOriginalTranscription, processWithAI, toast]);
 
+  const isProcessing = isProcessingAI || isTranscribing;
+
   return (
     <div className="flex items-center gap-2">
       {/* Status indicator */}
-      {isProcessingAI && (
+      {isTranscribing && (
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium bg-secondary text-secondary-foreground">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          A transcrever...
+        </div>
+      )}
+
+      {isProcessingAI && !isTranscribing && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium bg-primary/10 text-primary">
           <Sparkles className="w-3 h-3 animate-pulse" />
           AI...
         </div>
       )}
       
-      {isRecording && !isProcessingAI && (
+      {isRecording && !isProcessing && (
         <div className={cn(
           "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium",
           isPaused ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"
@@ -167,7 +241,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       )}
 
       {/* Control buttons */}
-      {!isRecording && !isProcessingAI ? (
+      {!isRecording && !isProcessing ? (
         <Button
           onClick={handleStart}
           disabled={isConnecting || !selectedTemplate}
@@ -181,10 +255,10 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
           )}
           Gravar
         </Button>
-      ) : isProcessingAI ? (
+      ) : isProcessing ? (
         <Button disabled size="sm" className="gap-1.5 h-7 text-xs">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          A processar...
+          {isTranscribing ? 'A transcrever...' : 'A processar...'}
         </Button>
       ) : (
         <>
@@ -211,7 +285,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
             variant="ghost"
             size="sm"
             className="gap-1 h-7 text-xs px-2 text-muted-foreground"
-            disabled={!selectedTemplate || isProcessingAI}
+            disabled={!selectedTemplate || isProcessing}
           >
             <TestTube className="w-3 h-3" />
             Teste
@@ -230,7 +304,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
             />
             <Button
               onClick={handleTestSubmit}
-              disabled={!testText.trim() || isProcessingAI}
+              disabled={!testText.trim() || isProcessing}
               size="sm"
               className="w-full gap-1.5"
             >
