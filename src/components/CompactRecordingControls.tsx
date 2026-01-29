@@ -105,12 +105,32 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   const handleStop = useCallback(async () => {
     stopRecording();
     disconnect();
-    
-    const transcription = accumulatedTranscriptRef.current.trim();
-    if (transcription) {
-      await processWithAI(transcription);
+
+    // When the user stops, it's common to still have relevant text in the partial transcript
+    // that hasn't been committed yet (VAD / timing). Include it so the AI always runs.
+    const finalText = [
+      accumulatedTranscriptRef.current,
+      partialTranscript ? applyRulesToText(partialTranscript) : '',
+    ]
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    if (finalText) {
+      accumulatedTranscriptRef.current = finalText;
+      setLiveTranscript(finalText);
+      setOriginalTranscription(finalText);
+      await processWithAI(finalText);
+      return;
     }
-  }, [stopRecording, disconnect, processWithAI]);
+
+    toast({
+      variant: 'destructive',
+      title: 'Sem transcrição',
+      description: 'Não foi captado texto suficiente para gerar o relatório.',
+    });
+  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, processWithAI, toast]);
 
   const handleTestSubmit = useCallback(async () => {
     if (!testText.trim() || !selectedTemplate) return;
