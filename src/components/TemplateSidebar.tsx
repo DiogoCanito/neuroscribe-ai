@@ -47,7 +47,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editType, setEditType] = useState<'modality' | 'region' | 'template'>('modality');
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
-  const [editData, setEditData] = useState<{ name?: string; icon?: string; baseText?: string }>({});
+  const [editData, setEditData] = useState<{ name?: string; icon?: string; baseText?: string; voiceAlias?: string }>({});
   const [editContext, setEditContext] = useState<{ modalityId?: string; regionId?: string; templateId?: string }>({});
   
   // Delete dialog state
@@ -128,7 +128,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
     e.stopPropagation();
     setEditType('template');
     setEditMode('edit');
-    setEditData({ name: template.name, baseText: template.baseText });
+    setEditData({ name: template.name, baseText: template.baseText, voiceAlias: template.voiceAlias });
     setEditContext({ modalityId, regionId, templateId: template.id });
     setEditDialogOpen(true);
   };
@@ -153,7 +153,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   };
 
   // Save handler
-  const handleSave = (data: { name: string; icon?: string; baseText?: string }) => {
+  const handleSave = (data: { name: string; icon?: string; baseText?: string; voiceAlias?: string }) => {
     if (editMode === 'add') {
       switch (editType) {
         case 'modality':
@@ -171,6 +171,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
             addTemplate(editContext.modalityId, editContext.regionId, {
               name: data.name,
               baseText: data.baseText || '',
+              voiceAlias: data.voiceAlias,
               autoTexts: [],
               keywordReplacements: []
             });
@@ -196,7 +197,8 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
           if (editContext.modalityId && editContext.regionId && editContext.templateId) {
             updateTemplate(editContext.modalityId, editContext.regionId, editContext.templateId, {
               name: data.name,
-              baseText: data.baseText
+              baseText: data.baseText,
+              voiceAlias: data.voiceAlias
             });
             toast({ title: 'Template atualizado', description: data.name });
           }

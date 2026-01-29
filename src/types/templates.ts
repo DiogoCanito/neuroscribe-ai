@@ -13,6 +13,7 @@ export interface KeywordReplacement {
 export interface TemplateContent {
   id: string;
   name: string;
+  voiceAlias?: string; // Custom voice command to select this template (e.g., "RM ME")
   baseText: string;
   autoTexts: AutoText[];
   keywordReplacements: KeywordReplacement[];

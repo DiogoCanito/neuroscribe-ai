@@ -24,8 +24,9 @@ interface TemplateEditDialogProps {
     name?: string;
     icon?: string;
     baseText?: string;
+    voiceAlias?: string;
   };
-  onSave: (data: { name: string; icon?: string; baseText?: string }) => void;
+  onSave: (data: { name: string; icon?: string; baseText?: string; voiceAlias?: string }) => void;
 }
 
 const iconOptions = [
@@ -48,19 +49,21 @@ export function TemplateEditDialog({
   const [name, setName] = useState(initialData?.name || '');
   const [icon, setIcon] = useState(initialData?.icon || 'Scan');
   const [baseText, setBaseText] = useState(initialData?.baseText || '');
+  const [voiceAlias, setVoiceAlias] = useState(initialData?.voiceAlias || '');
 
   useEffect(() => {
     if (open) {
       setName(initialData?.name || '');
       setIcon(initialData?.icon || 'Scan');
       setBaseText(initialData?.baseText || '');
+      setVoiceAlias(initialData?.voiceAlias || '');
     }
   }, [open, initialData]);
 
   const handleSave = () => {
     if (!name.trim()) return;
     
-    const data: { name: string; icon?: string; baseText?: string } = { name: name.trim() };
+    const data: { name: string; icon?: string; baseText?: string; voiceAlias?: string } = { name: name.trim() };
     
     if (type === 'modality') {
       data.icon = icon;
@@ -68,6 +71,7 @@ export function TemplateEditDialog({
     
     if (type === 'template') {
       data.baseText = baseText;
+      data.voiceAlias = voiceAlias.trim() || undefined;
     }
     
     onSave(data);
@@ -128,14 +132,29 @@ export function TemplateEditDialog({
           )}
           
           {type === 'template' && (
-            <div className="space-y-2">
-              <Label>Texto Base do Relatório</Label>
-              <TemplateRichTextEditor
-                value={baseText}
-                onChange={setBaseText}
-                placeholder="Insira o texto base do template..."
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="voiceAlias">Comando de Voz (opcional)</Label>
+                <Input
+                  id="voiceAlias"
+                  value={voiceAlias}
+                  onChange={(e) => setVoiceAlias(e.target.value)}
+                  placeholder="Ex: RM ME, crânio simples..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Diga este comando para selecionar o template por voz. Se vazio, usa o nome.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Texto Base do Relatório</Label>
+                <TemplateRichTextEditor
+                  value={baseText}
+                  onChange={setBaseText}
+                  placeholder="Insira o texto base do template..."
+                />
+              </div>
+            </>
           )}
         </div>
         

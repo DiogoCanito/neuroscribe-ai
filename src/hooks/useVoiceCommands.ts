@@ -83,6 +83,16 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
     for (const modality of templates) {
       for (const region of modality.regions) {
         for (const template of region.templates) {
+          // First check voice alias (custom command) - highest priority
+          if (template.voiceAlias) {
+            const aliasScore = similarity(normalizedSearch, template.voiceAlias);
+            if (aliasScore >= 0.8) {
+              // Voice alias is a near-exact match, use it immediately
+              return template;
+            }
+          }
+          
+          // Then check template name
           const templateName = normalizeText(template.name);
           const score = similarity(normalizedSearch, templateName);
           
@@ -94,7 +104,13 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
           ).length;
           const keyScore = keyMatches / templateWords.length;
           
-          const finalScore = Math.max(score, keyScore);
+          // Also check voice alias partial match
+          let aliasPartialScore = 0;
+          if (template.voiceAlias) {
+            aliasPartialScore = similarity(normalizedSearch, template.voiceAlias);
+          }
+          
+          const finalScore = Math.max(score, keyScore, aliasPartialScore);
           
           if (finalScore > bestScore && finalScore >= 0.5) {
             bestScore = finalScore;
