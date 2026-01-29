@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { templates, voiceCommands } from '@/data/templates';
 import { useEditorStore } from '@/stores/editorStore';
 import { TemplateContent } from '@/types/templates';
+import { useToast } from '@/hooks/use-toast';
 
 // Speech Recognition types for browsers
 interface SpeechRecognitionEvent extends Event {
@@ -28,10 +29,44 @@ interface UseVoiceCommandsReturn {
   toggleListening: () => void;
 }
 
+// Normalize text for comparison (remove accents and special chars)
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[-_]/g, ' ') // Replace hyphens/underscores with spaces
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+// Calculate similarity between two strings (0-1)
+function similarity(s1: string, s2: string): number {
+  const a = normalizeText(s1);
+  const b = normalizeText(s2);
+  
+  // Exact match
+  if (a === b) return 1;
+  
+  // One contains the other
+  if (a.includes(b) || b.includes(a)) return 0.9;
+  
+  // Word-based matching
+  const wordsA = a.split(' ');
+  const wordsB = b.split(' ');
+  
+  const matchingWords = wordsA.filter(word => 
+    wordsB.some(w => w.includes(word) || word.includes(w))
+  );
+  
+  return matchingWords.length / Math.max(wordsA.length, wordsB.length);
+}
+
 export function useVoiceCommands(): UseVoiceCommandsReturn {
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const { toast } = useToast();
   
   const { 
     loadTemplate, 
@@ -42,19 +77,35 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
   } = useEditorStore();
 
   const findTemplateByName = useCallback((name: string): TemplateContent | null => {
-    const normalizedName = name.toLowerCase().trim();
+    const normalizedSearch = normalizeText(name);
+    let bestMatch: TemplateContent | null = null;
+    let bestScore = 0;
     
     for (const modality of templates) {
       for (const region of modality.regions) {
         for (const template of region.templates) {
-          const templateName = template.name.toLowerCase();
-          if (templateName.includes(normalizedName) || normalizedName.includes(templateName)) {
-            return template;
+          const templateName = normalizeText(template.name);
+          const score = similarity(normalizedSearch, templateName);
+          
+          // Also check if search contains key parts of template name
+          const searchWords = normalizedSearch.split(' ');
+          const templateWords = templateName.split(' ');
+          const keyMatches = templateWords.filter(tw => 
+            searchWords.some(sw => sw.includes(tw) || tw.includes(sw))
+          ).length;
+          const keyScore = keyMatches / templateWords.length;
+          
+          const finalScore = Math.max(score, keyScore);
+          
+          if (finalScore > bestScore && finalScore >= 0.5) {
+            bestScore = finalScore;
+            bestMatch = template;
           }
         }
       }
     }
-    return null;
+    
+    return bestMatch;
   }, []);
 
   const processCommand = useCallback((transcript: string) => {
@@ -63,15 +114,46 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
     const text = transcript.toLowerCase().trim();
     setLastCommand(text);
 
-    // Template selection
-    const templateMatch = text.match(voiceCommands.selectTemplate);
-    if (templateMatch) {
-      const templateName = templateMatch[1];
-      const template = findTemplateByName(templateName);
-      if (template) {
-        loadTemplate(template);
-        return;
+    // Template selection - more flexible patterns
+    // Match "template X", "usar template X", "carregar template X", etc.
+    const templatePatterns = [
+      /^(?:template|usar template|carregar template|selecionar template|abrir template)\s+(.+)$/i,
+      /^(?:rm|ressonância|ressonancia)\s+(.+)$/i,  // "RM Cervical", "Ressonância Joelho"
+    ];
+    
+    for (const pattern of templatePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const templateName = match[1];
+        const template = findTemplateByName(templateName);
+        if (template) {
+          loadTemplate(template);
+          toast({
+            title: "Template carregado",
+            description: `"${template.name}" selecionado por voz.`
+          });
+          return;
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Template não encontrado",
+            description: `Não encontrei template para "${templateName}".`
+          });
+          return;
+        }
       }
+    }
+    
+    // Also try direct template name matching (without prefix)
+    // For cases like just saying "RM Cérvico-Dorsal"
+    const directMatch = findTemplateByName(text);
+    if (directMatch && similarity(text, directMatch.name) >= 0.7) {
+      loadTemplate(directMatch);
+      toast({
+        title: "Template carregado",
+        description: `"${directMatch.name}" selecionado por voz.`
+      });
+      return;
     }
 
     // Auto-text insertion
@@ -102,13 +184,18 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       setIsRecording(false);
       return;
     }
-  }, [voiceCommandsEnabled, findTemplateByName, loadTemplate, applyAutoText, setIsRecording, setIsPaused]);
+  }, [voiceCommandsEnabled, findTemplateByName, loadTemplate, applyAutoText, setIsRecording, setIsPaused, toast]);
 
   const startListening = useCallback(() => {
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognitionClass) {
       console.error('Speech recognition not supported');
+      toast({
+        variant: "destructive",
+        title: "Não suportado",
+        description: "O seu navegador não suporta reconhecimento de voz."
+      });
       return;
     }
 
@@ -140,7 +227,12 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, [isListening, processCommand]);
+    
+    toast({
+      title: "A ouvir comandos",
+      description: "Diga 'Template [nome]' para selecionar."
+    });
+  }, [isListening, processCommand, toast]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
