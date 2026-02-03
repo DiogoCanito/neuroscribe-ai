@@ -58,29 +58,38 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const lastExternalValue = useRef<string>('');
+  const isInternalChange = useRef<boolean>(false);
 
-  // Convert plain text with newlines to HTML
+  // Convert plain text/markdown with newlines to HTML
   const textToHtml = (text: string) => {
     if (!text) return '';
     // If already HTML, return as-is
     if (text.includes('<') && text.includes('>')) return text;
+    
+    // Convert markdown bold (**text**) to HTML
+    let html = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
     // Convert plain text newlines to HTML
-    return text
+    html = html
       .split('\n\n')
       .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)
       .join('');
+    
+    return html;
   };
 
-  // Sync external value changes - only update if the value is actually different
+  // Sync external value changes - only update if not from internal edits
   useEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && !isInternalChange.current) {
       const htmlValue = textToHtml(value);
-      // Only update if the external value has changed (not from internal edits)
+      // Only update if the external value has changed
       if (value !== lastExternalValue.current) {
+        console.log('[RichTextEditor] Updating with external value:', value?.substring(0, 100));
         lastExternalValue.current = value;
         editorRef.current.innerHTML = htmlValue;
       }
     }
+    isInternalChange.current = false;
   }, [value]);
 
   const execCommand = useCallback((command: string, value?: string) => {
@@ -92,6 +101,7 @@ export function RichTextEditor({
   const handleInput = useCallback(() => {
     if (editorRef.current) {
       const newValue = editorRef.current.innerHTML;
+      isInternalChange.current = true;
       lastExternalValue.current = newValue;
       onChange(newValue);
     }
