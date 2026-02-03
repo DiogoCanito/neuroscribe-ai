@@ -57,7 +57,7 @@ export function RichTextEditor({
   className 
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const lastExternalValue = useRef<string>('');
+  const lastRawValue = useRef<string>('');
   const isInternalChange = useRef<boolean>(false);
 
   // Convert plain text/markdown with newlines to HTML
@@ -78,14 +78,14 @@ export function RichTextEditor({
     return html;
   };
 
-  // Sync external value changes - only update if not from internal edits
+  // Sync external value changes - update editor when value changes from outside
   useEffect(() => {
     if (editorRef.current && !isInternalChange.current) {
-      const htmlValue = textToHtml(value);
-      // Only update if the external value has changed
-      if (value !== lastExternalValue.current) {
-        console.log('[RichTextEditor] Updating with external value:', value?.substring(0, 100));
-        lastExternalValue.current = value;
+      // Compare raw values to detect actual changes
+      if (value !== lastRawValue.current) {
+        console.log('[RichTextEditor] Updating with new value:', value?.substring(0, 100));
+        lastRawValue.current = value;
+        const htmlValue = textToHtml(value);
         editorRef.current.innerHTML = htmlValue;
       }
     }
@@ -102,7 +102,7 @@ export function RichTextEditor({
     if (editorRef.current) {
       const newValue = editorRef.current.innerHTML;
       isInternalChange.current = true;
-      lastExternalValue.current = newValue;
+      lastRawValue.current = newValue;
       onChange(newValue);
     }
   }, [onChange]);
