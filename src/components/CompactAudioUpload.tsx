@@ -64,6 +64,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
     const audioBlob = new Blob([await selectedFile.arrayBuffer()], { type: selectedFile.type });
 
     // Send to n8n for processing (transcription + AI report generation)
+    // The onSuccess callback in useN8nProcessor will handle setting the report content
     const result = await processWithN8n({
       audioBlob,
       templateType: selectedTemplate.name,
@@ -73,9 +74,9 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
     if (result) {
       // Store a placeholder for original transcription (n8n does the transcription)
       setOriginalTranscription('[Transcrição processada pelo n8n]');
-      onTranscriptionComplete('[Processado]');
+      // DON'T call onTranscriptionComplete here - it would overwrite the n8n result!
     }
-  }, [selectedFile, selectedTemplate, processWithN8n, setOriginalTranscription, onTranscriptionComplete, toast]);
+  }, [selectedFile, selectedTemplate, processWithN8n, setOriginalTranscription, toast]);
 
   const handleClear = useCallback(() => {
     setSelectedFile(null);
