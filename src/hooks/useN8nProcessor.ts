@@ -121,10 +121,15 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
         console.log('[n8n] Parsed JSON response:', data);
         
         // Support multiple response formats from n8n
+        // Note: "final report" has a space in n8n response
         if (typeof data === 'string') {
           finalReport = data;
+        } else if (data['final report']) {
+          finalReport = data['final report'];
         } else if (data.final_report) {
           finalReport = data.final_report;
+        } else if (data.finalReport) {
+          finalReport = data.finalReport;
         } else if (data.report) {
           finalReport = data.report;
         } else if (data.text) {
