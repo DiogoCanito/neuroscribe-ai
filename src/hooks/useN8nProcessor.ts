@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// n8n Webhook URL for medical transcription processing (TEST mode)
-const N8N_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook-test/medical-transcription';
+// n8n Webhook URL for medical transcription processing (PRODUCTION)
+const N8N_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook/medical-transcription';
 
 interface N8nProcessorOptions {
   onSuccess?: (finalReport: string) => void;
@@ -104,51 +104,51 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
         }),
       });
 
-      // TEST MODE: Just log the response, don't require specific format
       const responseText = await response.text();
       console.log('[n8n] Response status:', response.status);
       console.log('[n8n] Response body:', responseText);
 
       if (!response.ok) {
-        // In test mode, still show success if we got a response (even error)
-        // This helps debug the n8n workflow
-        console.warn('[n8n] Non-OK response, but data was sent. Check n8n execution.');
-        toast({
-          title: "Dados enviados ao n8n",
-          description: `Resposta: ${response.status}. Verifica a execução no n8n.`,
-          variant: "default"
-        });
-        return null;
+        throw new Error(`Erro n8n (${response.status}): ${responseText}`);
       }
 
-      // Try to parse response
+      // Parse the response - n8n should return the final report text directly or as JSON
+      let finalReport: string | null = null;
+      
       try {
-        const data: N8nResponse = JSON.parse(responseText);
-        console.log('[n8n] Parsed response:', data);
-
-        if (data.status === 'success' && data.final_report) {
-          options.onSuccess?.(data.final_report);
-          toast({
-            title: "Relatório gerado",
-            description: "O áudio foi processado e o relatório está pronto."
-          });
-          return data.final_report;
+        // Try to parse as JSON first
+        const data = JSON.parse(responseText);
+        console.log('[n8n] Parsed JSON response:', data);
+        
+        // Support multiple response formats from n8n
+        if (typeof data === 'string') {
+          finalReport = data;
+        } else if (data.final_report) {
+          finalReport = data.final_report;
+        } else if (data.report) {
+          finalReport = data.report;
+        } else if (data.text) {
+          finalReport = data.text;
+        } else if (data.output) {
+          finalReport = data.output;
         }
-
-        // If we got here, response format wasn't as expected but data was sent
-        toast({
-          title: "Dados enviados ao n8n",
-          description: "Verifica a execução no n8n para ver os dados recebidos."
-        });
-        return null;
       } catch {
-        // Response wasn't JSON - that's ok in test mode
-        toast({
-          title: "Dados enviados ao n8n",
-          description: "Verifica a execução no n8n para ver os dados recebidos."
-        });
-        return null;
+        // Not JSON - treat the raw response as the report text
+        console.log('[n8n] Response is plain text');
+        finalReport = responseText.trim();
       }
+
+      if (finalReport) {
+        console.log('[n8n] Final report received:', finalReport.substring(0, 100) + '...');
+        options.onSuccess?.(finalReport);
+        toast({
+          title: "Relatório gerado",
+          description: "O áudio foi processado e o relatório está pronto para edição."
+        });
+        return finalReport;
+      }
+
+      throw new Error('Resposta do n8n não contém relatório');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       console.error('[n8n] Processing error:', errorMessage);
