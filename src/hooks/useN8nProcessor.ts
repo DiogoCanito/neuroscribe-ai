@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// n8n Webhook URL for medical transcription processing
-const N8N_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook/medical-transcription';
+// n8n Webhook URL for medical transcription processing (TEST mode)
+const N8N_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook-test/medical-transcription';
 
 interface N8nProcessorOptions {
   onSuccess?: (finalReport: string) => void;
