@@ -4,8 +4,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
-import { supabase } from '@/integrations/supabase/client';
-import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube } from 'lucide-react';
+import { useN8nProcessor } from '@/hooks/useN8nProcessor';
+import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,8 +23,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     applyRulesToText 
   } = useEditorStore();
   
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState<string>('');
   const [testText, setTestText] = useState('');
   const [testPopoverOpen, setTestPopoverOpen] = useState(false);
@@ -35,12 +33,21 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     isRecording,
     isPaused,
     duration,
-    audioBlob,
     startRecording,
     stopRecording,
     pauseRecording,
     resumeRecording,
   } = audioRecorder;
+
+  // n8n processor - handles all audio processing externally
+  const { processWithN8n, isProcessing: isProcessingN8n } = useN8nProcessor({
+    onSuccess: (finalReport) => {
+      setReportContent(finalReport);
+    },
+    onError: (error) => {
+      console.error('n8n processing failed:', error);
+    }
+  });
 
   const {
     isConnecting,
@@ -67,107 +74,22 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     accumulatedTranscriptRef.current = '';
     setLiveTranscript('');
     await startRecording();
-    // Try to connect realtime, but don't block on failure
+    // Realtime transcription for live preview only (n8n will do final transcription)
     try {
       await connect();
     } catch (err) {
-      console.warn('Realtime transcription failed to connect, will use batch fallback:', err);
+      console.warn('Realtime transcription failed to connect:', err);
     }
   }, [startRecording, connect]);
-
-  const processWithAI = useCallback(async (transcription: string) => {
-    if (!selectedTemplate || !transcription.trim()) return;
-    
-    setIsProcessingAI(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-report', {
-        body: {
-          transcription: transcription.trim(),
-          templateName: selectedTemplate.name,
-          templateBaseText: selectedTemplate.baseText,
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.adaptedReport) {
-        setReportContent(data.adaptedReport);
-        toast({
-          title: "Relatório adaptado",
-          description: "O texto foi estruturado de acordo com o template."
-        });
-      }
-    } catch (err) {
-      console.error('AI processing error:', err);
-      toast({
-        variant: "destructive",
-        title: "Erro ao processar",
-        description: "Não foi possível adaptar o relatório."
-      });
-    } finally {
-      setIsProcessingAI(false);
-    }
-  }, [selectedTemplate, setReportContent, toast]);
-
-  // Fallback: transcribe audio using batch API
-  const transcribeAudioBatch = useCallback(async (blob: Blob): Promise<string | null> => {
-    setIsTranscribing(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', blob, 'recording.webm');
-      formData.append('language_code', 'por');
-      formData.append('tag_audio_events', 'false');
-      formData.append('diarize', 'false');
-
-      const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
-        body: formData,
-      });
-
-      if (error) throw error;
-
-      return data?.text || null;
-    } catch (err) {
-      console.error('Batch transcription error:', err);
-      return null;
-    } finally {
-      setIsTranscribing(false);
-    }
-  }, []);
 
   const handleStop = useCallback(async () => {
     // Stop recording first - this triggers audioBlob to be set
     stopRecording();
     disconnect();
 
-    // Check if we have realtime transcription
-    const realtimeText = [
-      accumulatedTranscriptRef.current,
-      partialTranscript ? applyRulesToText(partialTranscript) : '',
-    ]
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-
-    if (realtimeText) {
-      accumulatedTranscriptRef.current = realtimeText;
-      setLiveTranscript(realtimeText);
-      setOriginalTranscription(realtimeText);
-      await processWithAI(realtimeText);
-      return;
-    }
-
-    // Fallback: wait a bit for audioBlob to be ready, then use batch transcription
-    toast({
-      title: "A transcrever áudio...",
-      description: "A transcrição em tempo real não funcionou, a usar fallback."
-    });
-
     // Wait for audioBlob to be available (MediaRecorder.onstop is async)
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Get the current audioBlob from the recorder
     const currentBlob = audioRecorder.audioBlob;
     
     if (!currentBlob) {
@@ -179,51 +101,60 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       return;
     }
 
-    const batchText = await transcribeAudioBatch(currentBlob);
-    
-    if (!batchText || !batchText.trim()) {
+    if (!selectedTemplate) {
       toast({
         variant: 'destructive',
-        title: 'Sem transcrição',
-        description: 'Não foi captado texto suficiente para gerar o relatório.',
+        title: 'Sem template',
+        description: 'Selecione um template antes de gravar.',
       });
       return;
     }
 
-    const processedBatchText = applyRulesToText(batchText);
-    accumulatedTranscriptRef.current = processedBatchText;
-    setLiveTranscript(processedBatchText);
-    setOriginalTranscription(processedBatchText);
-    await processWithAI(processedBatchText);
-  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, processWithAI, toast, transcribeAudioBatch, audioRecorder]);
+    // Store live transcript as original transcription (for reference)
+    const liveText = accumulatedTranscriptRef.current || 
+      (partialTranscript ? applyRulesToText(partialTranscript) : '');
+    if (liveText) {
+      setOriginalTranscription(liveText);
+    }
+
+    // Send to n8n for processing (transcription + AI report generation)
+    toast({
+      title: "A processar...",
+      description: "O áudio está a ser enviado para processamento."
+    });
+
+    await processWithN8n({
+      audioBlob: currentBlob,
+      templateType: selectedTemplate.name,
+      templateText: selectedTemplate.baseText,
+    });
+  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast]);
 
   const handleTestSubmit = useCallback(async () => {
     if (!testText.trim() || !selectedTemplate) return;
+    
     setOriginalTranscription(testText);
     setTestPopoverOpen(false);
-    await processWithAI(testText);
+    
+    // For test mode, create a simple text blob to send to n8n
+    // Since we already have text, we'll need a different approach
+    // For now, show a message that test mode requires audio
     toast({
-      title: "Teste executado",
-      description: "O texto foi processado como transcrição."
+      variant: "default",
+      title: "Modo de teste",
+      description: "O modo de teste ainda não está implementado para o fluxo n8n. Use gravação de áudio."
     });
-  }, [testText, selectedTemplate, setOriginalTranscription, processWithAI, toast]);
+  }, [testText, selectedTemplate, setOriginalTranscription, toast]);
 
-  const isProcessing = isProcessingAI || isTranscribing;
+  const isProcessing = isProcessingN8n;
 
   return (
     <div className="flex items-center gap-2">
       {/* Status indicator */}
-      {isTranscribing && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium bg-secondary text-secondary-foreground">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          A transcrever...
-        </div>
-      )}
-
-      {isProcessingAI && !isTranscribing && (
+      {isProcessingN8n && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium bg-primary/10 text-primary">
-          <Sparkles className="w-3 h-3 animate-pulse" />
-          AI...
+          <Send className="w-3 h-3 animate-pulse" />
+          n8n...
         </div>
       )}
       
@@ -258,7 +189,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       ) : isProcessing ? (
         <Button disabled size="sm" className="gap-1.5 h-7 text-xs">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          {isTranscribing ? 'A transcrever...' : 'A processar...'}
+          A processar...
         </Button>
       ) : (
         <>
