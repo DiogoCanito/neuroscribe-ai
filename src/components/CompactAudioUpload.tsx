@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Upload, Loader2, X, FileAudio, Sparkles } from 'lucide-react';
+import { Upload, Loader2, X, FileAudio, Send } from 'lucide-react';
 import { useEditorStore } from '@/stores/editorStore';
+import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import {
   Popover,
   PopoverContent,
@@ -17,12 +17,24 @@ interface CompactAudioUploadProps {
 
 export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUploadProps) {
   const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate, applyRulesToText, setOriginalTranscription, setReportContent } = useEditorStore();
+  const { selectedTemplate, setOriginalTranscription, setReportContent } = useEditorStore();
+
+  // n8n processor - handles all audio processing externally
+  const { processWithN8n, isProcessing } = useN8nProcessor({
+    onSuccess: (finalReport) => {
+      setReportContent(finalReport);
+      // Clear file after successful processing
+      setSelectedFile(null);
+      setOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    },
+    onError: (error) => {
+      console.error('n8n upload processing failed:', error);
+    }
+  });
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,84 +52,30 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
     }
   }, [toast]);
 
-  const processWithAI = useCallback(async (transcription: string) => {
-    if (!selectedTemplate || !transcription.trim()) return;
-    
-    setIsProcessingAI(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-report', {
-        body: {
-          transcription: transcription.trim(),
-          templateName: selectedTemplate.name,
-          templateBaseText: selectedTemplate.baseText,
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.adaptedReport) {
-        setReportContent(data.adaptedReport);
-        toast({
-          title: "Relatório gerado",
-          description: "O áudio foi transcrito e estruturado de acordo com o template."
-        });
-      }
-    } catch (err) {
-      console.error('AI processing error:', err);
-      toast({
-        variant: "destructive",
-        title: "Erro ao processar",
-        description: "Não foi possível adaptar o relatório."
-      });
-    } finally {
-      setIsProcessingAI(false);
-    }
-  }, [selectedTemplate, setReportContent, toast]);
-
   const handleUpload = useCallback(async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !selectedTemplate) return;
 
-    setIsProcessing(true);
+    toast({
+      title: "A processar...",
+      description: "O ficheiro está a ser enviado para processamento."
+    });
 
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('model_id', 'scribe_v2');
-      formData.append('language_code', 'por');
-      formData.append('tag_audio_events', 'false');
-      formData.append('diarize', 'false');
+    // Convert File to Blob for n8n processing
+    const audioBlob = new Blob([await selectedFile.arrayBuffer()], { type: selectedFile.type });
 
-      const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
-        body: formData
-      });
+    // Send to n8n for processing (transcription + AI report generation)
+    const result = await processWithN8n({
+      audioBlob,
+      templateType: selectedTemplate.name,
+      templateText: selectedTemplate.baseText,
+    });
 
-      if (error) throw error;
-
-      if (data?.text) {
-        const processedText = applyRulesToText(data.text);
-        setOriginalTranscription(processedText);
-        onTranscriptionComplete(processedText);
-        
-        // Close popover and clear file before AI processing
-        setSelectedFile(null);
-        setOpen(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        
-        // Process with AI to generate structured report
-        await processWithAI(processedText);
-      }
-    } catch (err) {
-      console.error('Transcription error:', err);
-      toast({
-        variant: "destructive",
-        title: "Erro de transcrição",
-        description: "Não foi possível transcrever o áudio"
-      });
-    } finally {
-      setIsProcessing(false);
+    if (result) {
+      // Store a placeholder for original transcription (n8n does the transcription)
+      setOriginalTranscription('[Transcrição processada pelo n8n]');
+      onTranscriptionComplete('[Processado]');
     }
-  }, [selectedFile, onTranscriptionComplete, toast, applyRulesToText, setOriginalTranscription, processWithAI]);
+  }, [selectedFile, selectedTemplate, processWithN8n, setOriginalTranscription, onTranscriptionComplete, toast]);
 
   const handleClear = useCallback(() => {
     setSelectedFile(null);
@@ -170,27 +128,26 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
 
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || isProcessing || isProcessingAI}
+            disabled={!selectedFile || isProcessing}
             className="w-full gap-1.5 h-7 text-xs"
             size="sm"
           >
             {isProcessing ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                A transcrever...
-              </>
-            ) : isProcessingAI ? (
-              <>
-                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                A gerar relatório...
+                A enviar para n8n...
               </>
             ) : (
               <>
-                <Upload className="w-3.5 h-3.5" />
-                Transcrever
+                <Send className="w-3.5 h-3.5" />
+                Processar
               </>
             )}
           </Button>
+          
+          <p className="text-[10px] text-muted-foreground text-center">
+            O áudio será processado externamente
+          </p>
         </div>
       </PopoverContent>
     </Popover>
