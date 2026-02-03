@@ -86,6 +86,12 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
 
       // Step 2: Send to n8n webhook
       console.log('[n8n] Sending to n8n webhook...');
+      console.log('[n8n] Payload:', { 
+        template_type: templateType, 
+        template_text: templateText.substring(0, 100) + '...', 
+        audio_file: audioUrl 
+      });
+      
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -98,28 +104,51 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
         }),
       });
 
+      // TEST MODE: Just log the response, don't require specific format
+      const responseText = await response.text();
+      console.log('[n8n] Response status:', response.status);
+      console.log('[n8n] Response body:', responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`n8n error (${response.status}): ${errorText}`);
-      }
-
-      const data: N8nResponse = await response.json();
-      console.log('[n8n] Response received:', data);
-
-      if (data.status === 'error') {
-        throw new Error(data.message || 'Erro no processamento n8n');
-      }
-
-      if (data.status === 'success' && data.final_report) {
-        options.onSuccess?.(data.final_report);
+        // In test mode, still show success if we got a response (even error)
+        // This helps debug the n8n workflow
+        console.warn('[n8n] Non-OK response, but data was sent. Check n8n execution.');
         toast({
-          title: "Relatório gerado",
-          description: "O áudio foi processado e o relatório está pronto."
+          title: "Dados enviados ao n8n",
+          description: `Resposta: ${response.status}. Verifica a execução no n8n.`,
+          variant: "default"
         });
-        return data.final_report;
+        return null;
       }
 
-      throw new Error('Resposta inválida do n8n');
+      // Try to parse response
+      try {
+        const data: N8nResponse = JSON.parse(responseText);
+        console.log('[n8n] Parsed response:', data);
+
+        if (data.status === 'success' && data.final_report) {
+          options.onSuccess?.(data.final_report);
+          toast({
+            title: "Relatório gerado",
+            description: "O áudio foi processado e o relatório está pronto."
+          });
+          return data.final_report;
+        }
+
+        // If we got here, response format wasn't as expected but data was sent
+        toast({
+          title: "Dados enviados ao n8n",
+          description: "Verifica a execução no n8n para ver os dados recebidos."
+        });
+        return null;
+      } catch {
+        // Response wasn't JSON - that's ok in test mode
+        toast({
+          title: "Dados enviados ao n8n",
+          description: "Verifica a execução no n8n para ver os dados recebidos."
+        });
+        return null;
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       console.error('[n8n] Processing error:', errorMessage);
