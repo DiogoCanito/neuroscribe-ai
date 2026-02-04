@@ -1,12 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
-import { useEditorStore } from '@/stores/editorStore';
 import { Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function VoiceCommandsToggle() {
   const { isListening, toggleListening, lastCommand } = useVoiceCommands();
-  const { voiceCommandsEnabled } = useEditorStore();
 
   return (
     <div className="flex items-center gap-2">
