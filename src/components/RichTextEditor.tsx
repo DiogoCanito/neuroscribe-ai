@@ -162,9 +162,9 @@ export function RichTextEditor({
   );
 
   return (
-    <div className={cn("flex flex-col h-full border rounded-md bg-background", className)}>
+    <div className={cn("flex flex-col h-full border rounded-md bg-background overflow-hidden", className)}>
       {/* Compact Toolbar */}
-      <div className="flex items-center gap-0.5 p-1 border-b bg-muted/30 flex-wrap">
+      <div className="flex items-center gap-0.5 p-1 border-b bg-muted/30 flex-wrap shrink-0">
         {/* Undo/Redo */}
         <ToolbarButton onClick={() => execCommand('undo')} title="Desfazer (Ctrl+Z)">
           <Undo className="w-3 h-3" />
@@ -256,20 +256,19 @@ export function RichTextEditor({
         </ToolbarButton>
       </div>
 
-      {/* Editor - More compact text */}
+      {/* Editor - Full height with scroll */}
       <div
         ref={editorRef}
         contentEditable={!disabled}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         className={cn(
-          "flex-1 p-2 overflow-auto text-[11px] leading-relaxed outline-none",
+          "flex-1 p-2 overflow-auto text-[11px] leading-relaxed outline-none min-h-0",
           "focus:ring-0",
           disabled && "opacity-50 cursor-not-allowed",
           !value && "before:content-[attr(data-placeholder)] before:text-muted-foreground before:pointer-events-none"
         )}
         data-placeholder={placeholder}
-        style={{ minHeight: '150px' }}
         suppressContentEditableWarning
       />
     </div>

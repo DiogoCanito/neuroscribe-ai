@@ -66,8 +66,8 @@ export function AutoTextDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-1 h-6 text-[11px] px-2">
-          <MessageSquare className="w-3 h-3" />
-          Auto
+          <Mic className="w-3 h-3" />
+          Comandos
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh]">
