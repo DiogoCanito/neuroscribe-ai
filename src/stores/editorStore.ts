@@ -39,6 +39,7 @@ interface EditorState {
   findText: string;
   replaceText: string;
   highlightedText: string;
+  isTemplateSidebarMinimized: boolean;
   
   // Global rules and terms (persisted)
   replacementRules: ReplacementRule[];
@@ -60,6 +61,7 @@ interface EditorState {
   setFindText: (text: string) => void;
   setReplaceText: (text: string) => void;
   setHighlightedText: (text: string) => void;
+  setTemplateSidebarMinimized: (minimized: boolean) => void;
   
   // Rules & Terms actions
   addReplacementRule: (rule: Omit<ReplacementRule, 'id'>) => void;
@@ -100,6 +102,7 @@ export const useEditorStore = create<EditorState>()(
       findText: '',
       replaceText: '',
       highlightedText: '',
+      isTemplateSidebarMinimized: false,
       
       // Default rules
       replacementRules: [
@@ -141,6 +144,7 @@ export const useEditorStore = create<EditorState>()(
       setFindText: (text) => set({ findText: text }),
       setReplaceText: (text) => set({ replaceText: text }),
       setHighlightedText: (text) => set({ highlightedText: text }),
+      setTemplateSidebarMinimized: (minimized) => set({ isTemplateSidebarMinimized: minimized }),
       
       // Rules & Terms actions
       addReplacementRule: (rule) => {
@@ -192,7 +196,8 @@ export const useEditorStore = create<EditorState>()(
         set({
           selectedTemplate: template,
           reportContent: template.baseText,
-          originalTranscription: ''
+          originalTranscription: '',
+          isTemplateSidebarMinimized: true, // Auto-minimize sidebar when template is selected
         });
       },
       

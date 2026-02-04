@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TemplateSidebar } from '@/components/TemplateSidebar';
 import { CompactRecordingControls } from '@/components/CompactRecordingControls';
@@ -6,14 +6,17 @@ import { ReportEditor } from '@/components/ReportEditor';
 import { VoiceCommandsToggle } from '@/components/VoiceCommandsToggle';
 import { CompactAudioUpload } from '@/components/CompactAudioUpload';
 import { CompletedReportsList } from '@/components/CompletedReportsList';
+import { ClinicalAutoText } from '@/components/ClinicalAutoText';
 import { useEditorStore } from '@/stores/editorStore';
+import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
+import { cn } from '@/lib/utils';
 
 export default function ReportEditorPage() {
   const { toast } = useToast();
@@ -29,7 +32,24 @@ export default function ReportEditorPage() {
     resetEditor,
     audioBlob,
     recordingDuration,
+    isRecording,
+    isTemplateSidebarMinimized,
+    setTemplateSidebarMinimized,
   } = useEditorStore();
+
+  // n8n processor for reprocessing
+  const { processWithN8n, isProcessing } = useN8nProcessor({
+    onSuccess: (finalReport) => {
+      setReportContent(finalReport);
+    },
+  });
+
+  // Auto-minimize sidebar when recording starts
+  useEffect(() => {
+    if (isRecording) {
+      setTemplateSidebarMinimized(true);
+    }
+  }, [isRecording, setTemplateSidebarMinimized]);
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -114,6 +134,23 @@ export default function ReportEditorPage() {
       description: "Todos os dados foram removidos."
     });
   }, [resetEditor, toast]);
+
+  const handleReprocess = useCallback(async () => {
+    if (!audioBlob || !selectedTemplate) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "É necessário ter um áudio e template selecionados para reprocessar."
+      });
+      return;
+    }
+
+    await processWithN8n({
+      audioBlob,
+      templateType: selectedTemplate.name,
+      templateText: selectedTemplate.baseText,
+    });
+  }, [audioBlob, selectedTemplate, processWithN8n, toast]);
 
   const handleNextReport = useCallback(async () => {
     if (!reportContent.trim() || !selectedTemplate) {
@@ -211,11 +248,6 @@ export default function ReportEditorPage() {
 
         <div className="flex items-center gap-1">
           <VoiceCommandsToggle />
-          
-          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs px-2">
-            <RotateCcw className="w-3 h-3" />
-            Limpar
-          </Button>
 
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1 h-7 text-xs px-2 text-muted-foreground hover:text-foreground">
             <LogOut className="w-3 h-3" />
@@ -227,16 +259,67 @@ export default function ReportEditorPage() {
       {/* Tab Content */}
       {activeTab === 'new' ? (
         <div className="flex-1 flex min-h-0">
-          {/* Template Sidebar */}
-          <TemplateSidebar onTemplateSelect={handleTemplateSelect} />
+          {/* Template Sidebar - Collapsible */}
+          <div className={cn(
+            "shrink-0 transition-all duration-300 overflow-hidden",
+            isTemplateSidebarMinimized ? "w-0" : "w-48"
+          )}>
+            {!isTemplateSidebarMinimized && (
+              <TemplateSidebar onTemplateSelect={handleTemplateSelect} />
+            )}
+          </div>
 
           {/* Editor Area */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Recording Controls Row */}
             <div className="shrink-0 px-2 py-1 border-b border-border bg-card/50 flex items-center gap-2">
-              <CompactRecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
+              {/* Sidebar Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTemplateSidebarMinimized(!isTemplateSidebarMinimized)}
+                className="h-7 w-7 p-0"
+                title={isTemplateSidebarMinimized ? "Mostrar Templates" : "Ocultar Templates"}
+              >
+                {isTemplateSidebarMinimized ? (
+                  <PanelLeft className="w-3.5 h-3.5" />
+                ) : (
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                )}
+              </Button>
+              
               <div className="w-px h-4 bg-border" />
+              
+              <CompactRecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
+              
+              <div className="w-px h-4 bg-border" />
+              
               <CompactAudioUpload onTranscriptionComplete={handleTranscriptionUpdate} />
+              
+              <div className="w-px h-4 bg-border" />
+              
+              {/* Reprocess Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReprocess}
+                disabled={isProcessing || !audioBlob || !selectedTemplate}
+                className="gap-1 h-7 text-xs px-2"
+                title="Reprocessar o áudio com o template atual"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+                Reprocessar
+              </Button>
+              
+              {/* Reset Button */}
+              <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs px-2">
+                <RotateCcw className="w-3 h-3" />
+                Limpar
+              </Button>
               
               {/* Next Report Button */}
               <div className="ml-auto">
@@ -257,9 +340,15 @@ export default function ReportEditorPage() {
               </div>
             </div>
 
-            {/* Report Editor */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <ReportEditor onExportPDF={handleExportPDF} />
+            {/* Report Editor with AutoText Sidebar */}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+              {/* Report Editor */}
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ReportEditor onExportPDF={handleExportPDF} />
+              </div>
+              
+              {/* Clinical AutoText Sidebar - Always visible on the right */}
+              <ClinicalAutoText />
             </div>
           </div>
         </div>
