@@ -86,6 +86,17 @@ export function RichTextEditor({
     // Convert markdown bold (**text**) to HTML
     let html = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
+    // Make the first line (title) bold if it's all uppercase or looks like a title
+    const lines = html.split('\n');
+    if (lines.length > 0) {
+      const firstLine = lines[0].trim();
+      // Check if first line is uppercase (likely a title) and not already bold
+      if (firstLine && firstLine === firstLine.toUpperCase() && !firstLine.includes('<strong>')) {
+        lines[0] = `<strong>${firstLine}</strong>`;
+        html = lines.join('\n');
+      }
+    }
+    
     // Make section headers bold (case-insensitive matching)
     sectionHeaders.forEach(header => {
       // Match header at start of line, optionally followed by colon
