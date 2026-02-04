@@ -4,11 +4,10 @@ import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/stores/editorStore';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { TextManipulationDialog } from '@/components/TextManipulationDialog';
-import { AutoTextDialog } from '@/components/AutoTextDialog';
 import { 
   Search, 
   Copy, 
-  FileDown, 
+  FileDown,
   X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +86,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
         <div className="h-3 w-px bg-border" />
         
         <TextManipulationDialog />
-        <AutoTextDialog />
       </div>
 
       {/* Find & Replace Bar */}
