@@ -1,8 +1,7 @@
-import { useRef, useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/stores/editorStore';
-import { frequentTerms } from '@/data/templates';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { TextManipulationDialog } from '@/components/TextManipulationDialog';
 import { AutoTextDialog } from '@/components/AutoTextDialog';
@@ -10,18 +9,9 @@ import {
   Search, 
   Copy, 
   FileDown, 
-  X,
-  ChevronDown,
-  ChevronUp
+  X
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 interface ReportEditorProps {
   onExportPDF: () => void;
@@ -29,7 +19,6 @@ interface ReportEditorProps {
 
 export function ReportEditor({ onExportPDF }: ReportEditorProps) {
   const { toast } = useToast();
-  const [termsOpen, setTermsOpen] = useState(true);
   
   const {
     reportContent,
@@ -68,18 +57,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
       description: replaceAll ? "Todas as ocorrências substituídas" : "Primeira ocorrência substituída"
     });
   }, [findText, replaceText, findAndReplace, toast]);
-
-  const handleInsertTerm = useCallback((term: string) => {
-    document.execCommand('insertText', false, term);
-  }, []);
-
-  // Group terms by category
-  const termsByCategory = frequentTerms.reduce((acc, term) => {
-    const category = term.category || 'Outros';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(term);
-    return acc;
-  }, {} as Record<string, typeof frequentTerms>);
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
@@ -157,70 +134,18 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
         </div>
       )}
 
-      {/* Main content area */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Editor - Maximum space */}
-        <div className="flex-1 p-2 min-h-0 overflow-hidden">
-          <RichTextEditor
-            value={reportContent}
-            onChange={setReportContent}
-            placeholder={selectedTemplate 
-              ? "O relatório será apresentado aqui. Comece a gravar para adicionar conteúdo."
-              : "Selecione um template para começar..."
-            }
-            disabled={!selectedTemplate}
-            className="h-full"
-          />
-        </div>
-
-        {/* Compact Frequent Terms Sidebar */}
-        <div className="w-40 shrink-0 border-l border-border bg-muted/20 flex flex-col min-h-0 overflow-hidden">
-          <Collapsible open={termsOpen} onOpenChange={setTermsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-between px-2 py-1 rounded-none border-b border-border h-auto"
-              >
-                <span className="text-[10px] font-medium uppercase tracking-wide">Termos</span>
-                {termsOpen ? (
-                  <ChevronUp className="w-3 h-3" />
-                ) : (
-                  <ChevronDown className="w-3 h-3" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="flex-1 min-h-0 overflow-hidden">
-              <ScrollArea className="h-full max-h-[calc(100vh-200px)]">
-                <div className="p-1.5 space-y-1.5">
-                  {Object.entries(termsByCategory).map(([category, terms]) => (
-                    <div key={category}>
-                      <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
-                        {category}
-                      </p>
-                      <div className="space-y-0">
-                        {terms.map((term) => (
-                          <button
-                            key={term.id}
-                            onClick={() => handleInsertTerm(term.term)}
-                            disabled={!selectedTemplate}
-                            className={cn(
-                              "w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors",
-                              selectedTemplate 
-                                ? "hover:bg-accent/50 cursor-pointer" 
-                                : "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            {term.term}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+      {/* Editor - Full available space */}
+      <div className="flex-1 p-2 min-h-0 overflow-hidden">
+        <RichTextEditor
+          value={reportContent}
+          onChange={setReportContent}
+          placeholder={selectedTemplate 
+            ? "O relatório será apresentado aqui. Comece a gravar para adicionar conteúdo."
+            : "Selecione um template para começar..."
+          }
+          disabled={!selectedTemplate}
+          className="h-full"
+        />
       </div>
     </div>
   );
