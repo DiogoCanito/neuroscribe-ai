@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editorStore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { FileText, Zap } from 'lucide-react';
+import { Zap, Settings } from 'lucide-react';
+import { AutoTextManagerDialog } from './AutoTextManagerDialog';
 
 // Clinical auto-text snippets organized by category
 const clinicalAutoTexts = [
@@ -64,7 +65,8 @@ const clinicalAutoTexts = [
 
 export function ClinicalAutoText() {
   const { toast } = useToast();
-  const { reportContent, setReportContent, selectedTemplate } = useEditorStore();
+  const { reportContent, setReportContent, selectedTemplate, customTerms } = useEditorStore();
+  const [managerOpen, setManagerOpen] = useState(false);
 
   const handleInsertText = useCallback((text: string) => {
     if (!selectedTemplate) {
@@ -95,43 +97,87 @@ export function ClinicalAutoText() {
   }, {} as Record<string, typeof clinicalAutoTexts>);
 
   return (
-    <div className="w-44 h-full bg-muted/20 flex flex-col border-l border-border">
-      {/* Header */}
-      <div className="px-2 py-1.5 border-b border-border flex items-center gap-1.5">
-        <Zap className="w-3 h-3 text-primary" />
-        <span className="text-[10px] font-semibold uppercase tracking-wide">AutoTexto Clínico</span>
-      </div>
-      
-      {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-1.5 space-y-2">
-          {Object.entries(textsByCategory).map(([category, items]) => (
-            <div key={category}>
-              <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
-                {category}
-              </p>
-              <div className="space-y-0">
-                {items.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleInsertText(item.text)}
-                    disabled={!selectedTemplate}
-                    className={cn(
-                      "w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors leading-tight",
-                      selectedTemplate 
-                        ? "hover:bg-accent/50 cursor-pointer" 
-                        : "opacity-50 cursor-not-allowed"
-                    )}
-                    title={item.text}
-                  >
-                    {item.text.length > 40 ? item.text.substring(0, 40) + '...' : item.text}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+    <>
+      <div className="w-44 h-full bg-muted/20 flex flex-col border-l border-border">
+        {/* Header with Settings button */}
+        <div className="px-2 py-1.5 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide">AutoTexto</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setManagerOpen(true)}
+            className="h-5 w-5 p-0"
+            title="Gerir AutoTextos"
+          >
+            <Settings className="w-3 h-3" />
+          </Button>
         </div>
-      </ScrollArea>
-    </div>
+        
+        {/* Content */}
+        <ScrollArea className="flex-1">
+          <div className="p-1.5 space-y-2">
+            {/* User's custom terms first */}
+            {customTerms.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium text-primary uppercase tracking-wider px-1.5 mb-0.5">
+                  Meus Textos
+                </p>
+                <div className="space-y-0">
+                  {customTerms.map((term, index) => (
+                    <button
+                      key={`custom-${index}`}
+                      onClick={() => handleInsertText(term)}
+                      disabled={!selectedTemplate}
+                      className={cn(
+                        "w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors leading-tight",
+                        selectedTemplate 
+                          ? "hover:bg-accent/50 cursor-pointer" 
+                          : "opacity-50 cursor-not-allowed"
+                      )}
+                      title={term}
+                    >
+                      {term.length > 40 ? term.substring(0, 40) + '...' : term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Default clinical auto-texts */}
+            {Object.entries(textsByCategory).map(([category, items]) => (
+              <div key={category}>
+                <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
+                  {category}
+                </p>
+                <div className="space-y-0">
+                  {items.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleInsertText(item.text)}
+                      disabled={!selectedTemplate}
+                      className={cn(
+                        "w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors leading-tight",
+                        selectedTemplate 
+                          ? "hover:bg-accent/50 cursor-pointer" 
+                          : "opacity-50 cursor-not-allowed"
+                      )}
+                      title={item.text}
+                    >
+                      {item.text.length > 40 ? item.text.substring(0, 40) + '...' : item.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Manager Dialog */}
+      <AutoTextManagerDialog open={managerOpen} onOpenChange={setManagerOpen} />
+    </>
   );
 }
