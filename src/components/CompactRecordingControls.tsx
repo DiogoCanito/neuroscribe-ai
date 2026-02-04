@@ -1,10 +1,11 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
+import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
 import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -129,6 +130,36 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       templateText: selectedTemplate.baseText,
     });
   }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast]);
+
+  // Subscribe to voice commands for recording control
+  useEffect(() => {
+    const unsubscribe = subscribeToVoiceCommands((action) => {
+      switch (action) {
+        case 'START_RECORDING':
+          if (!isRecording && !isProcessingN8n && selectedTemplate) {
+            handleStart();
+          }
+          break;
+        case 'STOP_RECORDING':
+          if (isRecording) {
+            handleStop();
+          }
+          break;
+        case 'PAUSE_RECORDING':
+          if (isRecording && !isPaused) {
+            pauseRecording();
+          }
+          break;
+        case 'RESUME_RECORDING':
+          if (isRecording && isPaused) {
+            resumeRecording();
+          }
+          break;
+      }
+    });
+
+    return unsubscribe;
+  }, [isRecording, isPaused, isProcessingN8n, selectedTemplate, handleStart, handleStop, pauseRecording, resumeRecording]);
 
   const handleTestSubmit = useCallback(async () => {
     if (!testText.trim() || !selectedTemplate) return;

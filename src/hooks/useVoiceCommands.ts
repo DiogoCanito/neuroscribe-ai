@@ -217,34 +217,14 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
   const executeAction = useCallback((action: SystemAction, commandDescription: string) => {
     switch (action) {
       case 'START_RECORDING':
-        setIsRecording(true);
-        toast({
-          title: "Comando: Iniciar Gravação",
-          description: "A gravação foi iniciada."
-        });
-        break;
-        
       case 'STOP_RECORDING':
-        setIsRecording(false);
-        toast({
-          title: "Comando: Parar Gravação",
-          description: "A gravação foi terminada."
-        });
-        break;
-        
       case 'PAUSE_RECORDING':
-        setIsPaused(true);
-        toast({
-          title: "Comando: Pausar",
-          description: "A gravação foi pausada."
-        });
-        break;
-        
       case 'RESUME_RECORDING':
-        setIsPaused(false);
+        // Recording actions are handled by CompactRecordingControls
+        emitVoiceCommand(action);
         toast({
-          title: "Comando: Continuar",
-          description: "A gravação foi retomada."
+          title: `Comando: ${commandDescription}`,
+          description: "A executar..."
         });
         break;
         
@@ -267,7 +247,7 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
         });
         break;
     }
-  }, [setIsRecording, setIsPaused, resetEditor]);
+  }, [resetEditor]);
 
   // Process voice transcript
   const processCommand = useCallback((transcript: string) => {
