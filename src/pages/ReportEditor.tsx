@@ -9,6 +9,7 @@ import { CompletedReportsList } from '@/components/CompletedReportsList';
 import { ClinicalAutoText } from '@/components/ClinicalAutoText';
 import { useEditorStore } from '@/stores/editorStore';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
+import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
 import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -50,6 +51,7 @@ export default function ReportEditorPage() {
       setTemplateSidebarMinimized(true);
     }
   }, [isRecording, setTemplateSidebarMinimized]);
+
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -219,6 +221,28 @@ export default function ReportEditorPage() {
       setIsSaving(false);
     }
   }, [reportContent, selectedTemplate, audioBlob, recordingDuration, resetEditor, toast]);
+
+  // Subscribe to voice commands for actions that need component context
+  useEffect(() => {
+    const unsubscribe = subscribeToVoiceCommands((action) => {
+      switch (action) {
+        case 'NEXT_REPORT':
+          handleNextReport();
+          break;
+        case 'REPROCESS_REPORT':
+          handleReprocess();
+          break;
+        case 'PLAY_AUDIO':
+          toast({
+            title: "Reproduzir áudio",
+            description: audioBlob ? "Funcionalidade disponível no relatório guardado." : "Nenhum áudio disponível."
+          });
+          break;
+      }
+    });
+
+    return unsubscribe;
+  }, [handleNextReport, handleReprocess, audioBlob, toast]);
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">

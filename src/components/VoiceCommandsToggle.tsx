@@ -1,60 +1,42 @@
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { useEditorStore } from '@/stores/editorStore';
-import { 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  VolumeX,
-  Command 
-} from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function VoiceCommandsToggle() {
   const { isListening, toggleListening, lastCommand } = useVoiceCommands();
-  const { voiceCommandsEnabled, setVoiceCommandsEnabled } = useEditorStore();
+  const { voiceCommandsEnabled } = useEditorStore();
 
   return (
-    <div className="flex items-center gap-4">
-      {/* Voice Commands Toggle */}
-      <div className="flex items-center gap-2">
-        <Command className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Comandos</span>
-        <Switch
-          checked={voiceCommandsEnabled}
-          onCheckedChange={setVoiceCommandsEnabled}
-        />
-      </div>
-
-      {/* Listening Toggle */}
+    <div className="flex items-center gap-2">
+      {/* Single Listen Button */}
       <Button
         variant={isListening ? "default" : "outline"}
         size="sm"
         onClick={toggleListening}
-        disabled={!voiceCommandsEnabled}
         className={cn(
-          "gap-2",
-          isListening && "bg-primary"
+          "gap-1.5 h-7 text-xs px-2.5",
+          isListening && "bg-primary animate-pulse"
         )}
       >
         {isListening ? (
           <>
-            <Volume2 className="w-4 h-4" />
+            <Mic className="w-3.5 h-3.5" />
             A ouvir...
           </>
         ) : (
           <>
-            <VolumeX className="w-4 h-4" />
+            <MicOff className="w-3.5 h-3.5" />
             Ouvir
           </>
         )}
       </Button>
 
-      {/* Last Command Display */}
-      {lastCommand && voiceCommandsEnabled && (
-        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-          Último: "{lastCommand}"
+      {/* Last Command Feedback */}
+      {lastCommand && isListening && (
+        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded max-w-[200px] truncate">
+          ✓ "{lastCommand}"
         </div>
       )}
     </div>
