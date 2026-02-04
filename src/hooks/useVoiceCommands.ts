@@ -1,7 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { templates, voiceCommands } from '@/data/templates';
 import { useEditorStore } from '@/stores/editorStore';
-import { TemplateContent } from '@/types/templates';
 import { toast } from '@/hooks/use-toast';
 
 // Speech Recognition types for browsers
@@ -29,14 +27,75 @@ interface UseVoiceCommandsReturn {
   toggleListening: () => void;
 }
 
+// System command actions
+type SystemAction = 
+  | 'START_RECORDING'
+  | 'STOP_RECORDING'
+  | 'PAUSE_RECORDING'
+  | 'RESUME_RECORDING'
+  | 'NEXT_REPORT'
+  | 'CLEAR_REPORT'
+  | 'REPROCESS_REPORT'
+  | 'PLAY_AUDIO';
+
+interface SystemCommand {
+  phrases: string[];
+  action: SystemAction;
+  description: string;
+}
+
+// Predefined system commands - these control the APPLICATION, not clinical content
+const SYSTEM_COMMANDS: SystemCommand[] = [
+  {
+    phrases: ['próximo relatório', 'proximo relatorio', 'próximo', 'seguinte relatório'],
+    action: 'NEXT_REPORT',
+    description: 'Guardar e preparar próximo relatório'
+  },
+  {
+    phrases: ['iniciar gravação', 'iniciar gravacao', 'começar gravação', 'começar a gravar', 'gravar'],
+    action: 'START_RECORDING',
+    description: 'Iniciar gravação de áudio'
+  },
+  {
+    phrases: ['parar gravação', 'parar gravacao', 'terminar gravação', 'parar de gravar', 'parar'],
+    action: 'STOP_RECORDING',
+    description: 'Parar gravação de áudio'
+  },
+  {
+    phrases: ['pausar gravação', 'pausar gravacao', 'pausar'],
+    action: 'PAUSE_RECORDING',
+    description: 'Pausar gravação'
+  },
+  {
+    phrases: ['continuar gravação', 'retomar gravação', 'continuar a gravar', 'continuar'],
+    action: 'RESUME_RECORDING',
+    description: 'Retomar gravação'
+  },
+  {
+    phrases: ['limpar relatório', 'limpar relatorio', 'limpar editor', 'limpar tudo', 'limpar'],
+    action: 'CLEAR_REPORT',
+    description: 'Limpar editor'
+  },
+  {
+    phrases: ['reprocessar relatório', 'reprocessar relatorio', 'reprocessar', 'processar novamente'],
+    action: 'REPROCESS_REPORT',
+    description: 'Reprocessar com IA'
+  },
+  {
+    phrases: ['ouvir áudio', 'ouvir audio', 'reproduzir áudio', 'tocar áudio'],
+    action: 'PLAY_AUDIO',
+    description: 'Reproduzir áudio associado'
+  },
+];
+
 // Normalize text for comparison (remove accents and special chars)
 function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[-_]/g, ' ') // Replace hyphens/underscores with spaces
-    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -45,13 +104,9 @@ function similarity(s1: string, s2: string): number {
   const a = normalizeText(s1);
   const b = normalizeText(s2);
   
-  // Exact match
   if (a === b) return 1;
-  
-  // One contains the other
   if (a.includes(b) || b.includes(a)) return 0.9;
   
-  // Word-based matching
   const wordsA = a.split(' ');
   const wordsB = b.split(' ');
   
@@ -62,60 +117,43 @@ function similarity(s1: string, s2: string): number {
   return matchingWords.length / Math.max(wordsA.length, wordsB.length);
 }
 
+// Event system for cross-component communication
+type VoiceCommandListener = (action: SystemAction) => void;
+const listeners: Set<VoiceCommandListener> = new Set();
+
+export function subscribeToVoiceCommands(listener: VoiceCommandListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function emitVoiceCommand(action: SystemAction) {
+  listeners.forEach(listener => listener(action));
+}
+
 export function useVoiceCommands(): UseVoiceCommandsReturn {
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const isListeningRef = useRef(false);
   
   const { 
-    loadTemplate, 
-    applyAutoText, 
     setIsRecording,
     setIsPaused,
-    voiceCommandsEnabled 
+    resetEditor,
   } = useEditorStore();
 
-  const findTemplateByName = useCallback((name: string): TemplateContent | null => {
-    const normalizedSearch = normalizeText(name);
-    let bestMatch: TemplateContent | null = null;
+  // Find matching system command
+  const findSystemCommand = useCallback((transcript: string): SystemCommand | null => {
+    const normalizedTranscript = normalizeText(transcript);
+    let bestMatch: SystemCommand | null = null;
     let bestScore = 0;
     
-    for (const modality of templates) {
-      for (const region of modality.regions) {
-        for (const template of region.templates) {
-          // First check voice alias (custom command) - highest priority
-          if (template.voiceAlias) {
-            const aliasScore = similarity(normalizedSearch, template.voiceAlias);
-            if (aliasScore >= 0.8) {
-              // Voice alias is a near-exact match, use it immediately
-              return template;
-            }
-          }
-          
-          // Then check template name
-          const templateName = normalizeText(template.name);
-          const score = similarity(normalizedSearch, templateName);
-          
-          // Also check if search contains key parts of template name
-          const searchWords = normalizedSearch.split(' ');
-          const templateWords = templateName.split(' ');
-          const keyMatches = templateWords.filter(tw => 
-            searchWords.some(sw => sw.includes(tw) || tw.includes(sw))
-          ).length;
-          const keyScore = keyMatches / templateWords.length;
-          
-          // Also check voice alias partial match
-          let aliasPartialScore = 0;
-          if (template.voiceAlias) {
-            aliasPartialScore = similarity(normalizedSearch, template.voiceAlias);
-          }
-          
-          const finalScore = Math.max(score, keyScore, aliasPartialScore);
-          
-          if (finalScore > bestScore && finalScore >= 0.5) {
-            bestScore = finalScore;
-            bestMatch = template;
-          }
+    for (const command of SYSTEM_COMMANDS) {
+      for (const phrase of command.phrases) {
+        const score = similarity(normalizedTranscript, phrase);
+        if (score > bestScore && score >= 0.7) {
+          bestScore = score;
+          bestMatch = command;
         }
       }
     }
@@ -123,83 +161,77 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
     return bestMatch;
   }, []);
 
+  // Execute system action
+  const executeAction = useCallback((action: SystemAction, commandDescription: string) => {
+    switch (action) {
+      case 'START_RECORDING':
+        setIsRecording(true);
+        toast({
+          title: "Comando: Iniciar Gravação",
+          description: "A gravação foi iniciada."
+        });
+        break;
+        
+      case 'STOP_RECORDING':
+        setIsRecording(false);
+        toast({
+          title: "Comando: Parar Gravação",
+          description: "A gravação foi terminada."
+        });
+        break;
+        
+      case 'PAUSE_RECORDING':
+        setIsPaused(true);
+        toast({
+          title: "Comando: Pausar",
+          description: "A gravação foi pausada."
+        });
+        break;
+        
+      case 'RESUME_RECORDING':
+        setIsPaused(false);
+        toast({
+          title: "Comando: Continuar",
+          description: "A gravação foi retomada."
+        });
+        break;
+        
+      case 'CLEAR_REPORT':
+        resetEditor();
+        toast({
+          title: "Comando: Limpar",
+          description: "O editor foi limpo."
+        });
+        break;
+        
+      case 'NEXT_REPORT':
+      case 'REPROCESS_REPORT':
+      case 'PLAY_AUDIO':
+        // These need to be handled by the parent component
+        // Emit event for ReportEditorPage to handle
+        emitVoiceCommand(action);
+        toast({
+          title: `Comando: ${commandDescription}`,
+          description: "A executar..."
+        });
+        break;
+    }
+  }, [setIsRecording, setIsPaused, resetEditor]);
+
+  // Process voice transcript
   const processCommand = useCallback((transcript: string) => {
-    if (!voiceCommandsEnabled) return;
-    
     const text = transcript.toLowerCase().trim();
-    setLastCommand(text);
-
-    // Template selection - more flexible patterns
-    // Match "template X", "usar template X", "carregar template X", etc.
-    const templatePatterns = [
-      /^(?:template|usar template|carregar template|selecionar template|abrir template)\s+(.+)$/i,
-      /^(?:rm|ressonância|ressonancia)\s+(.+)$/i,  // "RM Cervical", "Ressonância Joelho"
-    ];
     
-    for (const pattern of templatePatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const templateName = match[1];
-        const template = findTemplateByName(templateName);
-        if (template) {
-          loadTemplate(template);
-          toast({
-            title: "Template carregado",
-            description: `"${template.name}" selecionado por voz.`
-          });
-          return;
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Template não encontrado",
-            description: `Não encontrei template para "${templateName}".`
-          });
-          return;
-        }
-      }
-    }
+    // Find matching system command
+    const command = findSystemCommand(text);
     
-    // Also try direct template name matching (without prefix)
-    // For cases like just saying "RM Cérvico-Dorsal"
-    const directMatch = findTemplateByName(text);
-    if (directMatch && similarity(text, directMatch.name) >= 0.7) {
-      loadTemplate(directMatch);
-      toast({
-        title: "Template carregado",
-        description: `"${directMatch.name}" selecionado por voz.`
-      });
-      return;
+    if (command) {
+      setLastCommand(text);
+      executeAction(command.action, command.description);
     }
-
-    // Auto-text insertion
-    const autoTextMatch = text.match(voiceCommands.insertAutoText);
-    if (autoTextMatch) {
-      const keyword = autoTextMatch[1];
-      applyAutoText(keyword);
-      return;
-    }
-
-    // Recording controls
-    if (voiceCommands.startRecording.test(text)) {
-      setIsRecording(true);
-      return;
-    }
-
-    if (voiceCommands.pauseRecording.test(text)) {
-      setIsPaused(true);
-      return;
-    }
-
-    if (voiceCommands.continueRecording.test(text)) {
-      setIsPaused(false);
-      return;
-    }
-
-    if (voiceCommands.stopRecording.test(text)) {
-      setIsRecording(false);
-      return;
-    }
-  }, [voiceCommandsEnabled, findTemplateByName, loadTemplate, applyAutoText, setIsRecording, setIsPaused]);
+    // If no command matches, do nothing - this is NOT clinical dictation
+    // The "Ouvir" button is ONLY for system commands
+  }, [findSystemCommand, executeAction]);
 
   const startListening = useCallback(() => {
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -229,32 +261,50 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       console.error('Speech recognition error:', event.error);
       if (event.error !== 'no-speech') {
         setIsListening(false);
+        isListeningRef.current = false;
       }
     };
 
     recognition.onend = () => {
       // Restart if still supposed to be listening
-      if (isListening && recognitionRef.current) {
-        recognition.start();
+      if (isListeningRef.current && recognitionRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error('Failed to restart recognition:', e);
+        }
       }
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    isListeningRef.current = true;
     
-    toast({
-      title: "A ouvir comandos",
-      description: "Diga 'Template [nome]' para selecionar."
-    });
-  }, [isListening, processCommand]);
+    try {
+      recognition.start();
+      setIsListening(true);
+      
+      toast({
+        title: "A ouvir comandos",
+        description: "Diga comandos como 'próximo relatório' ou 'limpar'."
+      });
+    } catch (e) {
+      console.error('Failed to start recognition:', e);
+    }
+  }, [processCommand]);
 
   const stopListening = useCallback(() => {
+    isListeningRef.current = false;
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
     }
     setIsListening(false);
+    setLastCommand(null);
+    
+    toast({
+      title: "Comandos desativados",
+      description: "O sistema deixou de ouvir comandos."
+    });
   }, []);
 
   const toggleListening = useCallback(() => {
@@ -265,8 +315,10 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
     }
   }, [isListening, startListening, stopListening]);
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isListeningRef.current = false;
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
