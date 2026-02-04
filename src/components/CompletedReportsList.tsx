@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, Download, Play, Trash2, Loader2, Calendar, Clock } from 'lucide-react';
+import { FileText, Download, Trash2, Loader2, Calendar, Clock, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -130,10 +130,23 @@ export function CompletedReportsList() {
 
     const filename = `relatorio-${report.template_name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(report.created_at), 'yyyy-MM-dd')}.pdf`;
     doc.save(filename);
+  };
+
+  // Download both PDF and audio
+  const handleDownloadAll = async (report: CompletedReport) => {
+    // Export PDF
+    handleExportPDF(report);
+
+    // Download audio if exists
+    if (report.audio_url) {
+      await handleDownloadAudio(report);
+    }
     
     toast({
-      title: "PDF exportado",
-      description: "O relatório foi guardado com sucesso."
+      title: "Ficheiros exportados",
+      description: report.audio_url 
+        ? "O PDF e o áudio foram guardados com sucesso." 
+        : "O PDF foi guardado com sucesso."
     });
   };
 
@@ -285,23 +298,11 @@ export function CompletedReportsList() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleExportPDF(report)}
-                    title="Download PDF"
+                    onClick={() => handleDownloadAll(report)}
+                    title={report.audio_url ? "Download PDF + Áudio" : "Download PDF"}
                   >
                     <Download className="w-4 h-4" />
                   </Button>
-                  
-                  {report.audio_url && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handlePlayAudio(report)}
-                      title={playingAudio === report.id ? "Parar" : "Reproduzir áudio"}
-                    >
-                      <Play className={`w-4 h-4 ${playingAudio === report.id ? 'text-primary' : ''}`} />
-                    </Button>
-                  )}
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
