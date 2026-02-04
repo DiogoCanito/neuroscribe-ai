@@ -60,6 +60,23 @@ export function RichTextEditor({
   const lastRawValue = useRef<string>('');
   const isInternalChange = useRef<boolean>(false);
 
+  // Section headers that should always be bold
+  const sectionHeaders = [
+    'INFORMAÇÃO CLÍNICA',
+    'INFORMACAO CLINICA',
+    'TÉCNICA',
+    'TECNICA',
+    'RELATÓRIO',
+    'RELATORIO',
+    'CONCLUSÃO',
+    'CONCLUSAO',
+    'DIAGNÓSTICO',
+    'DIAGNOSTICO',
+    'ACHADOS',
+    'IMPRESSÃO',
+    'IMPRESSAO',
+  ];
+
   // Convert plain text/markdown with newlines to HTML
   const textToHtml = (text: string) => {
     if (!text) return '';
@@ -68,6 +85,17 @@ export function RichTextEditor({
     
     // Convert markdown bold (**text**) to HTML
     let html = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Make section headers bold (case-insensitive matching)
+    sectionHeaders.forEach(header => {
+      // Match header at start of line, optionally followed by colon
+      const regex = new RegExp(`(^|\\n)(${header}:?)`, 'gi');
+      html = html.replace(regex, (match, prefix, headerText) => {
+        // Don't double-wrap if already bold
+        if (match.includes('<strong>')) return match;
+        return `${prefix}<strong>${headerText}</strong>`;
+      });
+    });
     
     // Convert plain text newlines to HTML
     html = html
