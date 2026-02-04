@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { templates } from '@/data/templates';
 import { useEditorStore } from '@/stores/editorStore';
+import { TemplateContent } from '@/types/templates';
 import { toast } from '@/hooks/use-toast';
 
 // Speech Recognition types for browsers
@@ -44,7 +46,7 @@ interface SystemCommand {
   description: string;
 }
 
-// Predefined system commands - these control the APPLICATION, not clinical content
+// Predefined system commands - these control the APPLICATION
 const SYSTEM_COMMANDS: SystemCommand[] = [
   {
     phrases: ['próximo relatório', 'proximo relatorio', 'próximo', 'seguinte relatório'],
@@ -137,10 +139,60 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
   const isListeningRef = useRef(false);
   
   const { 
+    loadTemplate,
     setIsRecording,
     setIsPaused,
     resetEditor,
   } = useEditorStore();
+
+  // Find template by name or voice alias
+  const findTemplateByName = useCallback((name: string): TemplateContent | null => {
+    const normalizedSearch = normalizeText(name);
+    let bestMatch: TemplateContent | null = null;
+    let bestScore = 0;
+    
+    for (const modality of templates) {
+      for (const region of modality.regions) {
+        for (const template of region.templates) {
+          // First check voice alias (custom command) - highest priority
+          if (template.voiceAlias) {
+            const aliasScore = similarity(normalizedSearch, template.voiceAlias);
+            if (aliasScore >= 0.8) {
+              // Voice alias is a near-exact match, use it immediately
+              return template;
+            }
+          }
+          
+          // Then check template name
+          const templateName = normalizeText(template.name);
+          const score = similarity(normalizedSearch, templateName);
+          
+          // Also check if search contains key parts of template name
+          const searchWords = normalizedSearch.split(' ');
+          const templateWords = templateName.split(' ');
+          const keyMatches = templateWords.filter(tw => 
+            searchWords.some(sw => sw.includes(tw) || tw.includes(sw))
+          ).length;
+          const keyScore = keyMatches / templateWords.length;
+          
+          // Also check voice alias partial match
+          let aliasPartialScore = 0;
+          if (template.voiceAlias) {
+            aliasPartialScore = similarity(normalizedSearch, template.voiceAlias);
+          }
+          
+          const finalScore = Math.max(score, keyScore, aliasPartialScore);
+          
+          if (finalScore > bestScore && finalScore >= 0.5) {
+            bestScore = finalScore;
+            bestMatch = template;
+          }
+        }
+      }
+    }
+    
+    return bestMatch;
+  }, []);
 
   // Find matching system command
   const findSystemCommand = useCallback((transcript: string): SystemCommand | null => {
@@ -208,7 +260,6 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       case 'REPROCESS_REPORT':
       case 'PLAY_AUDIO':
         // These need to be handled by the parent component
-        // Emit event for ReportEditorPage to handle
         emitVoiceCommand(action);
         toast({
           title: `Comando: ${commandDescription}`,
@@ -222,16 +273,62 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
   const processCommand = useCallback((transcript: string) => {
     const text = transcript.toLowerCase().trim();
     
-    // Find matching system command
-    const command = findSystemCommand(text);
+    // 1. First, try to match template selection commands
+    // Match patterns like "template X", "usar template X", "carregar template X", etc.
+    const templatePatterns = [
+      /^(?:template|usar template|carregar template|selecionar template|abrir template)\s+(.+)$/i,
+      /^(?:rm|ressonância|ressonancia)\s+(.+)$/i,  // "RM Cervical", "Ressonância Joelho"
+    ];
     
+    for (const pattern of templatePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const templateName = match[1];
+        const template = findTemplateByName(templateName);
+        if (template) {
+          setLastCommand(text);
+          loadTemplate(template);
+          toast({
+            title: "Template carregado",
+            description: `"${template.name}" selecionado por voz.`
+          });
+          return;
+        } else {
+          setLastCommand(text);
+          toast({
+            variant: "destructive",
+            title: "Template não encontrado",
+            description: `Não encontrei template para "${templateName}".`
+          });
+          return;
+        }
+      }
+    }
+    
+    // 2. Try direct template name matching (without prefix)
+    // For cases like just saying "RM Cérvico-Dorsal" or using voice alias
+    const directMatch = findTemplateByName(text);
+    if (directMatch && similarity(text, directMatch.voiceAlias || directMatch.name) >= 0.7) {
+      setLastCommand(text);
+      loadTemplate(directMatch);
+      toast({
+        title: "Template carregado",
+        description: `"${directMatch.name}" selecionado por voz.`
+      });
+      return;
+    }
+    
+    // 3. Check for system commands
+    const command = findSystemCommand(text);
     if (command) {
       setLastCommand(text);
       executeAction(command.action, command.description);
+      return;
     }
-    // If no command matches, do nothing - this is NOT clinical dictation
-    // The "Ouvir" button is ONLY for system commands
-  }, [findSystemCommand, executeAction]);
+    
+    // If nothing matches, don't do anything
+    // The "Ouvir" button is for system AND template commands only
+  }, [findTemplateByName, findSystemCommand, executeAction, loadTemplate]);
 
   const startListening = useCallback(() => {
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -285,7 +382,7 @@ export function useVoiceCommands(): UseVoiceCommandsReturn {
       
       toast({
         title: "A ouvir comandos",
-        description: "Diga comandos como 'próximo relatório' ou 'limpar'."
+        description: "Diga comandos de sistema ou nomes de templates."
       });
     } catch (e) {
       console.error('Failed to start recognition:', e);
