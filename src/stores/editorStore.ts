@@ -25,6 +25,7 @@ interface EditorState {
   // Editor state
   reportContent: string;
   originalTranscription: string;
+  isReportGenerated: boolean;
   
   // Recording state
   isRecording: boolean;
@@ -55,6 +56,7 @@ interface EditorState {
   addActiveTemplate: (template: TemplateContent) => void;
   removeActiveTemplate: (templateId: string) => void;
   setReportContent: (content: string) => void;
+  setIsReportGenerated: (generated: boolean) => void;
   setOriginalTranscription: (transcription: string) => void;
   setIsRecording: (isRecording: boolean) => void;
   setIsPaused: (isPaused: boolean) => void;
@@ -99,6 +101,7 @@ export const useEditorStore = create<EditorState>()(
       activeTemplates: [],
       reportContent: '',
       originalTranscription: '',
+      isReportGenerated: false,
       isRecording: false,
       isPaused: false,
       recordingDuration: 0,
@@ -153,6 +156,7 @@ export const useEditorStore = create<EditorState>()(
         }));
       },
       setReportContent: (content) => set({ reportContent: content }),
+      setIsReportGenerated: (generated) => set({ isReportGenerated: generated }),
       setOriginalTranscription: (transcription) => set({ originalTranscription: transcription }),
       setIsRecording: (isRecording) => set({ isRecording }),
       setIsPaused: (isPaused) => set({ isPaused }),
@@ -375,6 +379,7 @@ export const useEditorStore = create<EditorState>()(
           activeTemplates: [],
           reportContent: '',
           originalTranscription: '',
+          isReportGenerated: false,
           isRecording: false,
           isPaused: false,
           recordingDuration: 0,

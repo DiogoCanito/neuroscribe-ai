@@ -7,6 +7,7 @@ import { VoiceCommandsToggle } from '@/components/VoiceCommandsToggle';
 import { CompactAudioUpload } from '@/components/CompactAudioUpload';
 import { CompletedReportsList } from '@/components/CompletedReportsList';
 import { ClinicalAutoText } from '@/components/ClinicalAutoText';
+import { ReportVerification } from '@/components/ReportVerification';
 import { useEditorStore } from '@/stores/editorStore';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
@@ -38,12 +39,15 @@ export default function ReportEditorPage() {
     isTemplateSidebarMinimized,
     setTemplateSidebarMinimized,
     reportStylePreferences,
+    isReportGenerated,
+    setIsReportGenerated,
   } = useEditorStore();
 
   // n8n processor for reprocessing
   const { processWithN8n, isProcessing } = useN8nProcessor({
     onSuccess: (finalReport) => {
       setReportContent(finalReport);
+      setIsReportGenerated(true);
     },
   });
 
@@ -380,8 +384,12 @@ export default function ReportEditorPage() {
                 <ReportEditor onExportPDF={handleExportPDF} />
               </div>
               
-              {/* Clinical AutoText Sidebar - Visible when template(s) selected */}
-              <ClinicalAutoText />
+              {/* Right Sidebar: AutoText during dictation, Verification after report generated */}
+              {isReportGenerated ? (
+                <ReportVerification />
+              ) : (
+                <ClinicalAutoText />
+              )}
             </div>
           </div>
         </div>
