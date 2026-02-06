@@ -20,6 +20,7 @@ interface EditorState {
   selectedModality: TemplateModality | null;
   selectedRegion: TemplateRegion | null;
   selectedTemplate: TemplateContent | null;
+  activeTemplates: TemplateContent[];
   
   // Editor state
   reportContent: string;
@@ -50,6 +51,8 @@ interface EditorState {
   setSelectedModality: (modality: TemplateModality | null) => void;
   setSelectedRegion: (region: TemplateRegion | null) => void;
   setSelectedTemplate: (template: TemplateContent | null) => void;
+  addActiveTemplate: (template: TemplateContent) => void;
+  removeActiveTemplate: (templateId: string) => void;
   setReportContent: (content: string) => void;
   setOriginalTranscription: (transcription: string) => void;
   setIsRecording: (isRecording: boolean) => void;
@@ -91,6 +94,7 @@ export const useEditorStore = create<EditorState>()(
       selectedModality: null,
       selectedRegion: null,
       selectedTemplate: null,
+      activeTemplates: [],
       reportContent: '',
       originalTranscription: '',
       isRecording: false,
@@ -133,6 +137,17 @@ export const useEditorStore = create<EditorState>()(
       setSelectedModality: (modality) => set({ selectedModality: modality }),
       setSelectedRegion: (region) => set({ selectedRegion: region }),
       setSelectedTemplate: (template) => set({ selectedTemplate: template }),
+      addActiveTemplate: (template) => {
+        set((state) => {
+          if (state.activeTemplates.some(t => t.id === template.id)) return state;
+          return { activeTemplates: [...state.activeTemplates, template] };
+        });
+      },
+      removeActiveTemplate: (templateId) => {
+        set((state) => ({
+          activeTemplates: state.activeTemplates.filter(t => t.id !== templateId)
+        }));
+      },
       setReportContent: (content) => set({ reportContent: content }),
       setOriginalTranscription: (transcription) => set({ originalTranscription: transcription }),
       setIsRecording: (isRecording) => set({ isRecording }),
@@ -193,12 +208,28 @@ export const useEditorStore = create<EditorState>()(
       
       // Complex actions
       loadTemplate: (template) => {
-        set({
-          selectedTemplate: template,
-          reportContent: template.baseText,
-          originalTranscription: '',
-          isTemplateSidebarMinimized: true, // Auto-minimize sidebar when template is selected
-        });
+        const { reportContent, activeTemplates } = get();
+        const isAlreadyActive = activeTemplates.some(t => t.id === template.id);
+        
+        if (activeTemplates.length === 0 || reportContent.trim() === '') {
+          // First template or empty editor: replace content
+          set({
+            selectedTemplate: template,
+            activeTemplates: isAlreadyActive ? activeTemplates : [template],
+            reportContent: template.baseText,
+            originalTranscription: '',
+            isTemplateSidebarMinimized: true,
+          });
+        } else {
+          // Additional template: append to editor
+          const separator = '\n\n---\n\n';
+          set({
+            selectedTemplate: template,
+            activeTemplates: isAlreadyActive ? activeTemplates : [...activeTemplates, template],
+            reportContent: reportContent + separator + template.baseText,
+            isTemplateSidebarMinimized: true,
+          });
+        }
       },
       
       insertText: (text, position) => {
@@ -336,6 +367,7 @@ export const useEditorStore = create<EditorState>()(
           selectedModality: null,
           selectedRegion: null,
           selectedTemplate: null,
+          activeTemplates: [],
           reportContent: '',
           originalTranscription: '',
           isRecording: false,

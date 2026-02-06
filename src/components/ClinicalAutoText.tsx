@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editorStore';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { Zap, Settings, PanelRightClose, PanelRight } from 'lucide-react';
 import { AutoTextManagerDialog } from './AutoTextManagerDialog';
 
@@ -12,19 +11,16 @@ export function ClinicalAutoText() {
   const { 
     reportContent, 
     setReportContent, 
-    selectedTemplate, 
+    activeTemplates,
     customTerms,
-    isRecording 
   } = useEditorStore();
   const [managerOpen, setManagerOpen] = useState(false);
   const [manuallyHidden, setManuallyHidden] = useState(false);
 
-  // AutoText is visible only when recording AND a template is selected
-  const shouldBeVisible = isRecording && !!selectedTemplate && !manuallyHidden;
+  // AutoText is visible when at least one template is selected
+  const shouldBeVisible = activeTemplates.length > 0 && !manuallyHidden;
 
   const handleInsertText = useCallback((text: string) => {
-    if (!selectedTemplate) return;
-
     const newContent = reportContent ? reportContent + ' ' + text : text;
     setReportContent(newContent);
     
@@ -32,15 +28,11 @@ export function ClinicalAutoText() {
       title: "Texto inserido",
       description: text.substring(0, 30) + (text.length > 30 ? '...' : '')
     });
-  }, [reportContent, setReportContent, selectedTemplate, toast]);
+  }, [reportContent, setReportContent, toast]);
 
-  // Get autoTexts from the currently selected template
-  const templateAutoTexts = selectedTemplate?.autoTexts || [];
-
-  // If not visible, show a minimal collapsed tab
+  // If not visible, show a minimal collapsed tab or nothing
   if (!shouldBeVisible) {
-    // During recording but manually hidden, show a toggle to re-open
-    if (isRecording && selectedTemplate && manuallyHidden) {
+    if (activeTemplates.length > 0 && manuallyHidden) {
       return (
         <>
           <div className="shrink-0 flex items-center border-l border-border">
@@ -59,7 +51,6 @@ export function ClinicalAutoText() {
       );
     }
     
-    // Not recording — fully hidden, no UI at all
     return <AutoTextManagerDialog open={managerOpen} onOpenChange={setManagerOpen} />;
   }
 
@@ -93,13 +84,6 @@ export function ClinicalAutoText() {
             </Button>
           </div>
         </div>
-        
-        {/* Template name badge */}
-        <div className="px-2 py-1 border-b border-border bg-primary/5">
-          <p className="text-[9px] font-medium text-primary truncate">
-            {selectedTemplate?.name}
-          </p>
-        </div>
 
         {/* Content */}
         <ScrollArea className="flex-1">
@@ -125,30 +109,35 @@ export function ClinicalAutoText() {
               </div>
             )}
 
-            {/* Template-specific autoTexts */}
-            {templateAutoTexts.length > 0 && (
-              <div>
-                <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
-                  Frases Rápidas
-                </p>
-                <div className="space-y-0">
-                  {templateAutoTexts.map((item) => (
-                    <button
-                      key={item.keyword}
-                      onClick={() => handleInsertText(item.text)}
-                      className="w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors leading-tight hover:bg-accent/50 cursor-pointer"
-                      title={item.text}
-                    >
-                      {item.text.length > 40 ? item.text.substring(0, 40) + '...' : item.text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* AutoTexts grouped by active template */}
+            {activeTemplates.map((template) => {
+              const templateAutoTexts = template.autoTexts || [];
+              if (templateAutoTexts.length === 0) return null;
 
-            {templateAutoTexts.length === 0 && customTerms.length === 0 && (
+              return (
+                <div key={template.id}>
+                  <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider px-1.5 mb-0.5">
+                    {template.name}
+                  </p>
+                  <div className="space-y-0">
+                    {templateAutoTexts.map((item) => (
+                      <button
+                        key={`${template.id}-${item.keyword}`}
+                        onClick={() => handleInsertText(item.text)}
+                        className="w-full text-left px-1.5 py-0.5 text-[10px] rounded transition-colors leading-tight hover:bg-accent/50 cursor-pointer"
+                        title={item.text}
+                      >
+                        {item.text.length > 40 ? item.text.substring(0, 40) + '...' : item.text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {activeTemplates.every(t => (t.autoTexts || []).length === 0) && customTerms.length === 0 && (
               <p className="text-[10px] text-muted-foreground px-1.5 py-2 text-center">
-                Sem autotextos para esta template.
+                Sem autotextos para {activeTemplates.length > 1 ? 'estas templates' : 'esta template'}.
               </p>
             )}
           </div>
