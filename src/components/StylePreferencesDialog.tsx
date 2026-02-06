@@ -36,10 +36,9 @@ export function StylePreferencesDialog() {
   return (
     <>
       <Button
-        variant="ghost"
         size="sm"
         onClick={handleOpen}
-        className="gap-1.5 h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+        className="gap-1.5 h-7 text-xs"
       >
         <Bot className="w-3.5 h-3.5" />
         Vamos melhorar juntos!
