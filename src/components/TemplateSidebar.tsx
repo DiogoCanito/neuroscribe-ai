@@ -47,7 +47,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editType, setEditType] = useState<'modality' | 'region' | 'template'>('modality');
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
-  const [editData, setEditData] = useState<{ name?: string; icon?: string; baseText?: string; voiceAlias?: string }>({});
+  const [editData, setEditData] = useState<{ name?: string; icon?: string; baseText?: string; voiceAlias?: string; autoTexts?: import('@/types/templates').AutoText[] }>({});
   const [editContext, setEditContext] = useState<{ modalityId?: string; regionId?: string; templateId?: string }>({});
   
   // Delete dialog state
@@ -128,7 +128,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
     e.stopPropagation();
     setEditType('template');
     setEditMode('edit');
-    setEditData({ name: template.name, baseText: template.baseText, voiceAlias: template.voiceAlias });
+    setEditData({ name: template.name, baseText: template.baseText, voiceAlias: template.voiceAlias, autoTexts: template.autoTexts });
     setEditContext({ modalityId, regionId, templateId: template.id });
     setEditDialogOpen(true);
   };
@@ -153,7 +153,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   };
 
   // Save handler
-  const handleSave = (data: { name: string; icon?: string; baseText?: string; voiceAlias?: string }) => {
+  const handleSave = (data: { name: string; icon?: string; baseText?: string; voiceAlias?: string; autoTexts?: import('@/types/templates').AutoText[] }) => {
     if (editMode === 'add') {
       switch (editType) {
         case 'modality':
@@ -172,7 +172,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
               name: data.name,
               baseText: data.baseText || '',
               voiceAlias: data.voiceAlias,
-              autoTexts: [],
+              autoTexts: data.autoTexts || [],
               keywordReplacements: []
             });
             toast({ title: 'Template adicionado', description: data.name });
@@ -198,7 +198,8 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
             updateTemplate(editContext.modalityId, editContext.regionId, editContext.templateId, {
               name: data.name,
               baseText: data.baseText,
-              voiceAlias: data.voiceAlias
+              voiceAlias: data.voiceAlias,
+              autoTexts: data.autoTexts
             });
             toast({ title: 'Template atualizado', description: data.name });
           }
