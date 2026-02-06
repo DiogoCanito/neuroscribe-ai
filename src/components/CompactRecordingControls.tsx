@@ -23,6 +23,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     setReportContent,
     applyRulesToText,
     reportStylePreferences,
+    setIsReportGenerated,
   } = useEditorStore();
   
   const [liveTranscript, setLiveTranscript] = useState<string>('');
@@ -45,6 +46,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   const { processWithN8n, isProcessing: isProcessingN8n } = useN8nProcessor({
     onSuccess: (finalReport) => {
       setReportContent(finalReport);
+      setIsReportGenerated(true);
     },
     onError: (error) => {
       console.error('n8n processing failed:', error);

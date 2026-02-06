@@ -20,12 +20,13 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate, setOriginalTranscription, setReportContent, setAudioBlob, reportStylePreferences } = useEditorStore();
+  const { selectedTemplate, setOriginalTranscription, setReportContent, setAudioBlob, reportStylePreferences, setIsReportGenerated } = useEditorStore();
 
   // n8n processor - handles all audio processing externally
   const { processWithN8n, isProcessing } = useN8nProcessor({
     onSuccess: (finalReport) => {
       setReportContent(finalReport);
+      setIsReportGenerated(true);
       // Clear file after successful processing
       setSelectedFile(null);
       setOpen(false);
