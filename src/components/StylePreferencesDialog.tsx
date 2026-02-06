@@ -39,7 +39,7 @@ export function StylePreferencesDialog() {
         variant="ghost"
         size="sm"
         onClick={handleOpen}
-        className="gap-1.5 h-7 text-xs px-2 text-primary hover:text-primary hover:bg-primary/10"
+        className="gap-1.5 h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
       >
         <Bot className="w-3.5 h-3.5" />
         Vamos melhorar juntos!
