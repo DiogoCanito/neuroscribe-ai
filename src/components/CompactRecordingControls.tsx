@@ -21,7 +21,8 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     selectedTemplate, 
     setOriginalTranscription, 
     setReportContent,
-    applyRulesToText 
+    applyRulesToText,
+    reportStylePreferences,
   } = useEditorStore();
   
   const [liveTranscript, setLiveTranscript] = useState<string>('');
@@ -128,8 +129,9 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       audioBlob: currentBlob,
       templateType: selectedTemplate.name,
       templateText: selectedTemplate.baseText,
+      reportStylePreferences,
     });
-  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast]);
+  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast, reportStylePreferences]);
 
   // Subscribe to voice commands for recording control
   useEffect(() => {

@@ -14,6 +14,7 @@ import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { StylePreferencesDialog } from '@/components/StylePreferencesDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
@@ -36,6 +37,7 @@ export default function ReportEditorPage() {
     isRecording,
     isTemplateSidebarMinimized,
     setTemplateSidebarMinimized,
+    reportStylePreferences,
   } = useEditorStore();
 
   // n8n processor for reprocessing
@@ -154,8 +156,9 @@ export default function ReportEditorPage() {
       audioBlob,
       templateType: selectedTemplate.name,
       templateText: selectedTemplate.baseText,
+      reportStylePreferences,
     });
-  }, [audioBlob, selectedTemplate, processWithN8n, toast]);
+  }, [audioBlob, selectedTemplate, processWithN8n, toast, reportStylePreferences]);
 
   const handleNextReport = useCallback(async () => {
     if (!reportContent.trim() || !selectedTemplate) {
@@ -347,6 +350,9 @@ export default function ReportEditorPage() {
                 <RotateCcw className="w-3 h-3" />
                 Limpar
               </Button>
+              
+              {/* Style Preferences Button */}
+              <StylePreferencesDialog />
               
               {/* Next Report Button */}
               <div className="ml-auto">
