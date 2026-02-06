@@ -154,9 +154,9 @@ export function TemplateEditDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        isTemplate ? "sm:max-w-[900px] max-h-[90vh]" : "sm:max-w-[500px]"
+        isTemplate ? "sm:max-w-[900px] max-h-[90vh] p-6" : "sm:max-w-[500px] p-6"
       )}>
-        <DialogHeader>
+        <DialogHeader className="pb-2">
           <DialogTitle>{getTitle()}</DialogTitle>
         </DialogHeader>
         
@@ -196,7 +196,7 @@ export function TemplateEditDialog({
           />
         )}
         
-        <DialogFooter>
+        <DialogFooter className="pt-4 border-t border-border mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -307,9 +307,9 @@ function TemplateEditContent({
   placeholder: string;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-4 min-h-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-4 min-h-0 max-h-[calc(90vh-10rem)] overflow-hidden">
       {/* Left column: Template config */}
-      <div className="space-y-4 flex flex-col min-h-0">
+      <div className="space-y-4 flex flex-col min-h-0 overflow-hidden pr-2">
         <div className="space-y-2">
           <Label htmlFor="name">Nome da Template</Label>
           <Input
@@ -333,9 +333,9 @@ function TemplateEditContent({
           </p>
         </div>
         
-        <div className="space-y-2 flex-1 flex flex-col min-h-0">
+        <div className="space-y-2 flex-1 flex flex-col min-h-0 overflow-hidden">
           <Label>Texto Base do Relatório</Label>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto rounded-md">
             <TemplateRichTextEditor
               value={baseText}
               onChange={setBaseText}
@@ -346,7 +346,7 @@ function TemplateEditContent({
       </div>
 
       {/* Right column: AutoTexts */}
-      <div className="flex flex-col min-h-0 border-l border-border pl-6">
+      <div className="flex flex-col min-h-0 overflow-hidden border-l border-border pl-8">
         <div className="mb-3">
           <Label className="text-sm font-semibold">AutoTextos da Template</Label>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -392,8 +392,8 @@ function TemplateEditContent({
         </div>
 
         {/* List of autotexts */}
-        <ScrollArea className="flex-1 min-h-0 max-h-[340px]">
-          <div className="space-y-1 pr-2">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-1 pr-3">
             {autoTexts.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">
                 Sem autotextos. Adicione frases clínicas rápidas para esta template.
