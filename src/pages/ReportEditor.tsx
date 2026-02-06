@@ -371,7 +371,7 @@ export default function ReportEditorPage() {
                 <ReportEditor onExportPDF={handleExportPDF} />
               </div>
               
-              {/* Clinical AutoText Sidebar - Always visible on the right */}
+              {/* Clinical AutoText Sidebar - Visible only during recording */}
               <ClinicalAutoText />
             </div>
           </div>
