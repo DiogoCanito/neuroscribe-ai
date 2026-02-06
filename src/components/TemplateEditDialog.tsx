@@ -154,9 +154,9 @@ export function TemplateEditDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        isTemplate ? "sm:max-w-[900px] max-h-[90vh] p-6" : "sm:max-w-[500px] p-6"
+        isTemplate ? "sm:max-w-[900px] max-h-[90vh] p-6 flex flex-col" : "sm:max-w-[500px] p-6"
       )}>
-        <DialogHeader className="pb-2">
+        <DialogHeader className="pb-1 shrink-0">
           <DialogTitle>{getTitle()}</DialogTitle>
         </DialogHeader>
         
@@ -196,7 +196,7 @@ export function TemplateEditDialog({
           />
         )}
         
-        <DialogFooter className="pt-4 border-t border-border mt-2">
+        <DialogFooter className="pt-3 border-t border-border shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -307,34 +307,38 @@ function TemplateEditContent({
   placeholder: string;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-4 min-h-0 max-h-[calc(90vh-10rem)] overflow-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2 pb-1 min-h-0 flex-1 overflow-hidden">
       {/* Left column: Template config */}
-      <div className="space-y-4 flex flex-col min-h-0 overflow-hidden pr-2">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nome da Template</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={placeholder}
-          />
-        </div>
+      <div className="flex flex-col min-h-0 overflow-hidden pr-2">
+        {/* Fixed fields - always visible */}
+        <div className="space-y-3 shrink-0 pb-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Nome da Template</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={placeholder}
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="voiceAlias">Comando de Voz (opcional)</Label>
-          <Input
-            id="voiceAlias"
-            value={voiceAlias}
-            onChange={(e) => setVoiceAlias(e.target.value)}
-            placeholder="Ex: RM ME, crânio simples..."
-          />
-          <p className="text-xs text-muted-foreground">
-            Diga este comando para selecionar o template por voz.
-          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="voiceAlias">Comando de Voz (opcional)</Label>
+            <Input
+              id="voiceAlias"
+              value={voiceAlias}
+              onChange={(e) => setVoiceAlias(e.target.value)}
+              placeholder="Ex: RM ME, crânio simples..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Diga este comando para selecionar o template por voz.
+            </p>
+          </div>
         </div>
         
-        <div className="space-y-2 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <Label>Texto Base do Relatório</Label>
+        {/* Text Base - fills remaining space, single scroll here */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <Label className="shrink-0 mb-1.5">Texto Base do Relatório</Label>
           <div className="flex-1 min-h-0 overflow-auto rounded-md">
             <TemplateRichTextEditor
               value={baseText}
