@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 // n8n Webhook URL for report verification (separate from generation)
-const N8N_VERIFICATION_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook/medical-verification';
+const N8N_VERIFICATION_WEBHOOK_URL = 'https://teamm8.app.n8n.cloud/webhook/verificacao-relatorio';
 
 export interface VerificationIssue {
   type: string;
