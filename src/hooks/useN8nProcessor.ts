@@ -26,6 +26,7 @@ interface ProcessAudioParams {
   audioBlob: Blob;
   templateType: string;
   templateText: string;
+  reportStylePreferences?: string;
 }
 
 export function useN8nProcessor(options: N8nProcessorOptions = {}) {
@@ -74,6 +75,7 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
     audioBlob,
     templateType,
     templateText,
+    reportStylePreferences,
   }: ProcessAudioParams): Promise<string | null> => {
     setIsProcessing(true);
     setError(null);
@@ -92,16 +94,23 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
         audio_file: audioUrl 
       });
       
+      const payload: Record<string, string> = {
+        template_type: templateType,
+        template_text: templateText,
+        audio_file: audioUrl,
+      };
+      
+      // Only include style preferences if the user has set them
+      if (reportStylePreferences?.trim()) {
+        payload.report_style_preferences = reportStylePreferences.trim();
+      }
+      
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          template_type: templateType,
-          template_text: templateText,
-          audio_file: audioUrl,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const responseText = await response.text();

@@ -20,7 +20,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate, setOriginalTranscription, setReportContent, setAudioBlob } = useEditorStore();
+  const { selectedTemplate, setOriginalTranscription, setReportContent, setAudioBlob, reportStylePreferences } = useEditorStore();
 
   // n8n processor - handles all audio processing externally
   const { processWithN8n, isProcessing } = useN8nProcessor({
@@ -72,6 +72,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
       audioBlob: uploadedBlob,
       templateType: selectedTemplate.name,
       templateText: selectedTemplate.baseText,
+      reportStylePreferences,
     });
 
     if (result) {

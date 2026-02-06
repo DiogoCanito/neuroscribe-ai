@@ -46,6 +46,7 @@ interface EditorState {
   replacementRules: ReplacementRule[];
   customTerms: string[];
   voiceCommands: VoiceCommand[];
+  reportStylePreferences: string;
   
   // Actions
   setSelectedModality: (modality: TemplateModality | null) => void;
@@ -65,6 +66,7 @@ interface EditorState {
   setReplaceText: (text: string) => void;
   setHighlightedText: (text: string) => void;
   setTemplateSidebarMinimized: (minimized: boolean) => void;
+  setReportStylePreferences: (prefs: string) => void;
   
   // Rules & Terms actions
   addReplacementRule: (rule: Omit<ReplacementRule, 'id'>) => void;
@@ -133,6 +135,8 @@ export const useEditorStore = create<EditorState>()(
         { id: '4', keyword: 'alinhamento normal', text: 'Mantido o alinhamento fisiológico.' },
       ],
       
+      reportStylePreferences: '',
+      
       // Simple setters
       setSelectedModality: (modality) => set({ selectedModality: modality }),
       setSelectedRegion: (region) => set({ selectedRegion: region }),
@@ -160,6 +164,7 @@ export const useEditorStore = create<EditorState>()(
       setReplaceText: (text) => set({ replaceText: text }),
       setHighlightedText: (text) => set({ highlightedText: text }),
       setTemplateSidebarMinimized: (minimized) => set({ isTemplateSidebarMinimized: minimized }),
+      setReportStylePreferences: (prefs) => set({ reportStylePreferences: prefs }),
       
       // Rules & Terms actions
       addReplacementRule: (rule) => {
@@ -387,6 +392,7 @@ export const useEditorStore = create<EditorState>()(
         customTerms: state.customTerms,
         voiceCommands: state.voiceCommands,
         voiceCommandsEnabled: state.voiceCommandsEnabled,
+        reportStylePreferences: state.reportStylePreferences,
       }),
     }
   )
