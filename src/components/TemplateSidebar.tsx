@@ -27,7 +27,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
   const [expandedModalities, setExpandedModalities] = useState<string[]>(['ressonancia']);
   const [expandedRegions, setExpandedRegions] = useState<string[]>([]);
   
-  const { selectedTemplate } = useEditorStore();
+  const { selectedTemplate, activeTemplates } = useEditorStore();
   const { 
     templates, 
     addModality, 
@@ -273,6 +273,7 @@ export function TemplateSidebar({ onTemplateSelect }: TemplateSidebarProps) {
                 isExpanded={expandedModalities.includes(modality.id)}
                 expandedRegions={expandedRegions}
                 selectedTemplateId={selectedTemplate?.id}
+                activeTemplateIds={activeTemplates.map(t => t.id)}
                 onToggle={() => toggleModality(modality.id)}
                 onToggleRegion={toggleRegion}
                 onTemplateClick={handleTemplateClick}
@@ -327,6 +328,7 @@ interface ModalityItemProps {
   isExpanded: boolean;
   expandedRegions: string[];
   selectedTemplateId?: string;
+  activeTemplateIds: string[];
   onToggle: () => void;
   onToggleRegion: (regionId: string) => void;
   onTemplateClick: (template: TemplateContent) => void;
@@ -346,6 +348,7 @@ function ModalityItem({
   isExpanded,
   expandedRegions,
   selectedTemplateId,
+  activeTemplateIds,
   onToggle,
   onToggleRegion,
   onTemplateClick,
@@ -408,6 +411,7 @@ function ModalityItem({
               region={region}
               isExpanded={expandedRegions.includes(region.id)}
               selectedTemplateId={selectedTemplateId}
+              activeTemplateIds={activeTemplateIds}
               onToggle={() => onToggleRegion(region.id)}
               onTemplateClick={onTemplateClick}
               onAddTemplate={onAddTemplate}
@@ -428,6 +432,7 @@ interface RegionItemProps {
   region: TemplateRegion;
   isExpanded: boolean;
   selectedTemplateId?: string;
+  activeTemplateIds: string[];
   onToggle: () => void;
   onTemplateClick: (template: TemplateContent) => void;
   onAddTemplate: (modalityId: string, regionId: string) => void;
@@ -442,6 +447,7 @@ function RegionItem({
   region,
   isExpanded,
   selectedTemplateId,
+  activeTemplateIds,
   onToggle,
   onTemplateClick,
   onAddTemplate,
@@ -499,6 +505,8 @@ function RegionItem({
                   "flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-colors",
                   selectedTemplateId === template.id
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : activeTemplateIds.includes(template.id)
+                    ? "bg-sidebar-primary/40 text-sidebar-primary-foreground"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
               >

@@ -63,12 +63,15 @@ export default function ReportEditorPage() {
   }, [navigate, toast]);
 
   const handleTemplateSelect = useCallback((template: TemplateContent) => {
+    const hasContent = reportContent.trim() !== '';
     loadTemplate(template);
     toast({
-      title: "Template carregado",
-      description: `"${template.name}" está pronto para edição.`
+      title: hasContent ? "Template adicionado" : "Template carregado",
+      description: hasContent 
+        ? `"${template.name}" adicionado ao relatório.`
+        : `"${template.name}" está pronto para edição.`
     });
-  }, [loadTemplate, toast]);
+  }, [loadTemplate, reportContent, toast]);
 
   const handleTranscriptionUpdate = useCallback((text: string) => {
     setReportContent(reportContent + ' ' + text);
@@ -371,7 +374,7 @@ export default function ReportEditorPage() {
                 <ReportEditor onExportPDF={handleExportPDF} />
               </div>
               
-              {/* Clinical AutoText Sidebar - Visible only during recording */}
+              {/* Clinical AutoText Sidebar - Visible when template(s) selected */}
               <ClinicalAutoText />
             </div>
           </div>
