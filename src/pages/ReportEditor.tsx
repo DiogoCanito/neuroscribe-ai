@@ -8,13 +8,16 @@ import { CompactAudioUpload } from '@/components/CompactAudioUpload';
 import { CompletedReportsList } from '@/components/CompletedReportsList';
 import { ClinicalAutoText } from '@/components/ClinicalAutoText';
 import { ReportVerification } from '@/components/ReportVerification';
+import { TutorialOverlay } from '@/components/TutorialOverlay';
 import { useEditorStore } from '@/stores/editorStore';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
+import { useTutorialStore } from '@/stores/tutorialStore';
 import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft, Info } from 'lucide-react';
 import { StylePreferencesDialog } from '@/components/StylePreferencesDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +45,15 @@ export default function ReportEditorPage() {
     isReportGenerated,
     setIsReportGenerated,
   } = useEditorStore();
+
+  const { startTutorial, initializeForUser: initTutorial } = useTutorialStore();
+
+  // Initialize tutorial for user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      initTutorial(user?.id ?? null);
+    });
+  }, [initTutorial]);
 
   // n8n processor for reprocessing
   const { processWithN8n, isProcessing } = useN8nProcessor({
@@ -278,10 +290,28 @@ export default function ReportEditorPage() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={startTutorial}
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              >
+                <Info className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs">Tour sobre as funcionalidades</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-1">
-          <VoiceCommandsToggle />
+          <div data-tutorial="voice-commands">
+            <VoiceCommandsToggle />
+          </div>
 
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1 h-7 text-xs px-2 text-muted-foreground hover:text-foreground">
             <LogOut className="w-3 h-3" />
@@ -294,10 +324,13 @@ export default function ReportEditorPage() {
       {activeTab === 'new' ? (
         <div className="flex-1 flex min-h-0">
           {/* Template Sidebar - Collapsible */}
-          <div className={cn(
-            "shrink-0 transition-all duration-300 overflow-hidden",
-            isTemplateSidebarMinimized ? "w-0" : "w-48"
-          )}>
+          <div
+            data-tutorial="templates-sidebar"
+            className={cn(
+              "shrink-0 transition-all duration-300 overflow-hidden",
+              isTemplateSidebarMinimized ? "w-0" : "w-48"
+            )}
+          >
             {!isTemplateSidebarMinimized && (
               <TemplateSidebar onTemplateSelect={handleTemplateSelect} />
             )}
@@ -324,7 +357,9 @@ export default function ReportEditorPage() {
               
               <div className="w-px h-4 bg-border" />
               
-              <CompactRecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
+              <div data-tutorial="record-button">
+                <CompactRecordingControls onTranscriptionUpdate={handleTranscriptionUpdate} />
+              </div>
               
               <div className="w-px h-4 bg-border" />
               
@@ -356,10 +391,12 @@ export default function ReportEditorPage() {
               </Button>
               
               {/* Style Preferences Button */}
-              <StylePreferencesDialog />
+              <div data-tutorial="style-preferences">
+                <StylePreferencesDialog />
+              </div>
               
               {/* Next Report Button */}
-              <div className="ml-auto">
+              <div className="ml-auto" data-tutorial="next-report">
                 <Button
                   onClick={handleNextReport}
                   disabled={isSaving || !reportContent.trim() || !selectedTemplate}
@@ -380,7 +417,7 @@ export default function ReportEditorPage() {
             {/* Report Editor with Textos Automáticos Sidebar */}
             <div className="flex-1 flex min-h-0 overflow-hidden">
               {/* Report Editor */}
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden" data-tutorial="report-editor">
                 <ReportEditor onExportPDF={handleExportPDF} />
               </div>
               
@@ -388,7 +425,9 @@ export default function ReportEditorPage() {
               {isReportGenerated ? (
                 <ReportVerification />
               ) : (
-                <ClinicalAutoText />
+                <div data-tutorial="auto-texts" className="h-full">
+                  <ClinicalAutoText />
+                </div>
               )}
             </div>
           </div>
@@ -398,6 +437,8 @@ export default function ReportEditorPage() {
           <CompletedReportsList />
         </div>
       )}
+      {/* Tutorial Overlay */}
+      <TutorialOverlay />
     </div>
   );
 }
