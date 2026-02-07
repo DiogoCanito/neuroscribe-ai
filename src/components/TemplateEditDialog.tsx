@@ -352,7 +352,7 @@ function TemplateEditContent({
       {/* Right column: AutoTexts */}
       <div className="flex flex-col min-h-0 overflow-hidden border-l border-border pl-8">
         <div className="mb-3">
-          <Label className="text-sm font-semibold">AutoTextos da Template</Label>
+          <Label className="text-sm font-semibold">Textos Automáticos da Template</Label>
           <p className="text-xs text-muted-foreground mt-0.5">
             Frases rápidas específicas para esta template. Aparecem na barra lateral durante o relato.
           </p>
@@ -400,7 +400,7 @@ function TemplateEditContent({
           <div className="space-y-1 pr-3">
             {autoTexts.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">
-                Sem autotextos. Adicione frases clínicas rápidas para esta template.
+                Sem textos automáticos. Adicione frases clínicas rápidas para esta template.
               </p>
             ) : (
               autoTexts.map((at, index) => (

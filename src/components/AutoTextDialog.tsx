@@ -74,7 +74,7 @@ export function AutoTextDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mic className="w-5 h-5" />
-            Comandos por Voz (AutoTexto)
+            Comandos por Voz (Textos Automáticos)
           </DialogTitle>
         </DialogHeader>
         
