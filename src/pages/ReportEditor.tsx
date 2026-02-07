@@ -377,14 +377,14 @@ export default function ReportEditorPage() {
               </div>
             </div>
 
-            {/* Report Editor with AutoText Sidebar */}
+            {/* Report Editor with Textos Automáticos Sidebar */}
             <div className="flex-1 flex min-h-0 overflow-hidden">
               {/* Report Editor */}
               <div className="flex-1 min-h-0 overflow-hidden">
                 <ReportEditor onExportPDF={handleExportPDF} />
               </div>
               
-              {/* Right Sidebar: AutoText during dictation, Verification after report generated */}
+              {/* Right Sidebar: Textos Automáticos during dictation, Verification after report generated */}
               {isReportGenerated ? (
                 <ReportVerification />
               ) : (

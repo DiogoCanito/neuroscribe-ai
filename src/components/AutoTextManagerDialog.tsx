@@ -50,7 +50,7 @@ export function AutoTextManagerDialog({ open, onOpenChange }: AutoTextManagerDia
     addCustomTerm(newTerm.trim());
     setNewTerm('');
     toast({
-      title: "AutoTexto adicionado",
+      title: "Texto automático adicionado",
       description: "O novo texto foi guardado."
     });
   };
@@ -58,7 +58,7 @@ export function AutoTextManagerDialog({ open, onOpenChange }: AutoTextManagerDia
   const handleDeleteTerm = (index: number) => {
     deleteCustomTerm(index);
     toast({
-      title: "AutoTexto removido",
+      title: "Texto automático removido",
       description: "O texto foi eliminado."
     });
   };
@@ -67,14 +67,14 @@ export function AutoTextManagerDialog({ open, onOpenChange }: AutoTextManagerDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Gerir AutoTextos</DialogTitle>
+          <DialogTitle>Gerir Textos Automáticos</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 min-h-0">
           {/* Add new term */}
           <div className="space-y-2">
             <Label htmlFor="new-term" className="text-xs font-medium">
-              Adicionar novo AutoTexto
+              Adicionar novo Texto Automático
             </Label>
             <div className="flex gap-2">
               <Textarea
@@ -101,13 +101,13 @@ export function AutoTextManagerDialog({ open, onOpenChange }: AutoTextManagerDia
           {/* List of existing terms */}
           <div className="space-y-2 flex-1 min-h-0">
             <Label className="text-xs font-medium">
-              AutoTextos existentes ({customTerms.length})
+              Textos automáticos existentes ({customTerms.length})
             </Label>
             <ScrollArea className="h-[250px] rounded-md border">
               <div className="p-2 space-y-1">
                 {customTerms.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    Ainda não tem AutoTextos personalizados.
+                    Ainda não tem textos automáticos personalizados.
                   </p>
                 ) : (
                   customTerms.map((term, index) => (
