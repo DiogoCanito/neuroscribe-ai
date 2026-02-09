@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/stores/editorStore';
 import { RichTextEditor } from '@/components/RichTextEditor';
-import { TextManipulationDialog } from '@/components/TextManipulationDialog';
 import { 
   Search, 
   Copy, 
@@ -83,9 +82,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
           PDF
         </Button>
 
-        <div className="h-3 w-px bg-border" />
-        
-        <TextManipulationDialog />
       </div>
 
       {/* Find & Replace Bar */}

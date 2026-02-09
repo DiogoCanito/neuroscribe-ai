@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useToast } from '@/hooks/use-toast';
-import { Bot } from 'lucide-react';
+import { Bot, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -18,19 +19,49 @@ export function StylePreferencesDialog() {
   const { reportStylePreferences, setReportStylePreferences } = useEditorStore();
   const [open, setOpen] = useState(false);
   const [localValue, setLocalValue] = useState(reportStylePreferences);
+  const [saving, setSaving] = useState(false);
+
+  // Sync local value when store changes (e.g. after loading from DB)
+  useEffect(() => {
+    if (!open) setLocalValue(reportStylePreferences);
+  }, [reportStylePreferences, open]);
 
   const handleOpen = () => {
     setLocalValue(reportStylePreferences);
     setOpen(true);
   };
 
-  const handleSave = () => {
-    setReportStylePreferences(localValue.trim());
-    setOpen(false);
-    toast({
-      title: "Preferências guardadas",
-      description: "A IA vai adaptar os relatórios ao seu estilo.",
-    });
+  const handleSave = async () => {
+    const trimmed = localValue.trim();
+    setSaving(true);
+    try {
+      // Save to store (localStorage)
+      setReportStylePreferences(trimmed);
+
+      // Save to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ report_style_preferences: trimmed } as any)
+          .eq('user_id', user.id);
+      }
+
+      setOpen(false);
+      toast({
+        title: "Preferências guardadas",
+        description: "A IA vai adaptar os relatórios ao seu estilo.",
+      });
+    } catch (err) {
+      console.error('Failed to save style preferences:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível guardar as preferências.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -72,7 +103,8 @@ export function StylePreferencesDialog() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               Guardar Preferências
             </Button>
           </DialogFooter>
