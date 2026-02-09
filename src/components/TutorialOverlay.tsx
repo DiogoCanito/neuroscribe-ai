@@ -144,6 +144,7 @@ export function TutorialOverlay() {
   const totalSteps = tutorialSteps.length;
   const isFirst = currentStep === 0;
   const isLast = currentStep === totalSteps - 1;
+  const isWelcome = currentStep === 0;
 
   return createPortal(
     <div
@@ -270,7 +271,7 @@ export function TutorialOverlay() {
                 onClick={nextStep}
                 className="h-8 text-xs gap-1 px-3"
               >
-                {isLast ? 'Concluir' : 'Próximo'}
+                {isLast ? 'Concluir tutorial' : 'Próximo'}
                 {!isLast && <ChevronRight className="w-3.5 h-3.5" />}
               </Button>
             </div>

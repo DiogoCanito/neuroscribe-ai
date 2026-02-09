@@ -284,7 +284,7 @@ export default function ReportEditorPage() {
                 <Plus className="w-3 h-3" />
                 Novos Relatórios
               </TabsTrigger>
-              <TabsTrigger value="history" className="h-6 text-xs px-2.5 gap-1">
+          <TabsTrigger value="history" className="h-6 text-xs px-2.5 gap-1" data-tutorial="completed-reports">
                 <FolderOpen className="w-3 h-3" />
                 Relatórios
               </TabsTrigger>
@@ -367,28 +367,30 @@ export default function ReportEditorPage() {
               
               <div className="w-px h-4 bg-border" />
               
-              {/* Reprocess Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReprocess}
-                disabled={isProcessing || !audioBlob || !selectedTemplate}
-                className="gap-1 h-7 text-xs px-2"
-                title="Reprocessar o áudio com o template atual"
-              >
-                {isProcessing ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-3 h-3" />
-                )}
-                Reprocessar
-              </Button>
-              
-              {/* Reset Button */}
-              <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs px-2">
-                <RotateCcw className="w-3 h-3" />
-                Limpar
-              </Button>
+              <div className="flex items-center gap-1" data-tutorial="action-bar">
+                {/* Reprocess Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReprocess}
+                  disabled={isProcessing || !audioBlob || !selectedTemplate}
+                  className="gap-1 h-7 text-xs px-2"
+                  title="Reprocessar o áudio com o template atual"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3" />
+                  )}
+                  Reprocessar
+                </Button>
+                
+                {/* Reset Button */}
+                <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1 h-7 text-xs px-2">
+                  <RotateCcw className="w-3 h-3" />
+                  Limpar
+                </Button>
+              </div>
               
               {/* Style Preferences Button */}
               <div data-tutorial="style-preferences">
@@ -423,7 +425,9 @@ export default function ReportEditorPage() {
               
               {/* Right Sidebar: Textos Automáticos during dictation, Verification after report generated */}
               {isReportGenerated ? (
-                <ReportVerification />
+                <div data-tutorial="verification-panel" className="h-full">
+                  <ReportVerification />
+                </div>
               ) : (
                 <div data-tutorial="auto-texts" className="h-full">
                   <ClinicalAutoText />
