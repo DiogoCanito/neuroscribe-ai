@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { supabase } from "@/integrations/supabase/client";
 import { useTemplateStore } from "@/stores/templateStore";
+import { useEditorStore } from "@/stores/editorStore";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,22 @@ function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const initializeForUser = useTemplateStore((state) => state.initializeForUser);
+  const setReportStylePreferences = useEditorStore((state) => state.setReportStylePreferences);
+  
+  const loadStylePreferences = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('report_style_preferences')
+        .eq('user_id', userId)
+        .single();
+      if (data && (data as any).report_style_preferences) {
+        setReportStylePreferences((data as any).report_style_preferences);
+      }
+    } catch (err) {
+      console.warn('Could not load style preferences:', err);
+    }
+  };
   
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -35,6 +52,7 @@ function AppContent() {
         // Defer Supabase calls to avoid deadlock
         setTimeout(() => {
           initializeForUser(session?.user?.id ?? null);
+          if (session?.user?.id) loadStylePreferences(session.user.id);
         }, 0);
       }
     );
@@ -43,6 +61,7 @@ function AppContent() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       initializeForUser(session?.user?.id ?? null);
+      if (session?.user?.id) loadStylePreferences(session.user.id);
       setLoading(false);
     });
 

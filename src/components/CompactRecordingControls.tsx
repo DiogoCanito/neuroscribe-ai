@@ -6,10 +6,9 @@ import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
-import { Mic, Pause, Play, Square, Loader2, Sparkles, TestTube, Send } from 'lucide-react';
+import { Mic, Pause, Play, Square, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CompactRecordingControlsProps {
   onTranscriptionUpdate: (text: string) => void;
@@ -28,8 +27,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   } = useEditorStore();
   
   const [liveTranscript, setLiveTranscript] = useState<string>('');
-  const [testText, setTestText] = useState('');
-  const [testPopoverOpen, setTestPopoverOpen] = useState(false);
   const accumulatedTranscriptRef = useRef<string>('');
   
   const audioRecorder = useAudioRecorder();
@@ -170,22 +167,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     return unsubscribe;
   }, [isRecording, isPaused, isProcessingN8n, selectedTemplate, handleStart, handleStop, pauseRecording, resumeRecording]);
 
-  const handleTestSubmit = useCallback(async () => {
-    if (!testText.trim() || !selectedTemplate) return;
-    
-    setOriginalTranscription(testText);
-    setTestPopoverOpen(false);
-    
-    // For test mode, create a simple text blob to send to n8n
-    // Since we already have text, we'll need a different approach
-    // For now, show a message that test mode requires audio
-    toast({
-      variant: "default",
-      title: "Modo de teste",
-      description: "O modo de teste ainda não está implementado para o fluxo n8n. Use gravação de áudio."
-    });
-  }, [testText, selectedTemplate, setOriginalTranscription, toast]);
-
   const isProcessing = isProcessingN8n;
 
   return (
@@ -249,42 +230,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
         </>
       )}
 
-      {/* Test Mode Button */}
-      <Popover open={testPopoverOpen} onOpenChange={setTestPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1 h-7 text-xs px-2 text-muted-foreground"
-            disabled={!selectedTemplate || isProcessing}
-          >
-            <TestTube className="w-3 h-3" />
-            Teste
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80" align="start">
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium">
-              Cole texto para simular uma transcrição:
-            </p>
-            <Textarea
-              value={testText}
-              onChange={(e) => setTestText(e.target.value)}
-              placeholder="Ex: Informação clínica estadiamento de neoplasia do pulmão..."
-              className="min-h-[100px] text-xs"
-            />
-            <Button
-              onClick={handleTestSubmit}
-              disabled={!testText.trim() || isProcessing}
-              size="sm"
-              className="w-full gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Gerar Relatório
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
     </div>
   );
 }
