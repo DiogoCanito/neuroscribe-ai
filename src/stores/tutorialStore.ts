@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useEditorStore } from '@/stores/editorStore';
 
 export interface TutorialStep {
   id: string;
@@ -6,9 +7,7 @@ export interface TutorialStep {
   title: string;
   description: string;
   position: 'top' | 'bottom' | 'left' | 'right';
-  /** Actions to run when entering this step */
   onEnter?: () => void;
-  /** Actions to run when leaving this step */
   onLeave?: () => void;
 }
 
@@ -27,8 +26,6 @@ export const tutorialSteps: TutorialStep[] = [
     description: 'Aqui encontra os templates de exames organizados por modalidade (RM, TAC, etc.). Pode selecionar um ou mais templates para construir o relatório.',
     position: 'right',
     onEnter: () => {
-      // Force open templates sidebar
-      const { useEditorStore } = require('@/stores/editorStore');
       useEditorStore.getState().setTemplateSidebarMinimized(false);
     },
   },
@@ -46,8 +43,6 @@ export const tutorialSteps: TutorialStep[] = [
     description: 'Pode ditar o relatório utilizando o botão "Gravar" ou enviar um ficheiro de áudio através de "Upload". O botão "Ouvir" controla apenas os comandos de voz do sistema — não interfere com a gravação. O botão "Gravar" funciona de forma independente.',
     position: 'bottom',
     onEnter: () => {
-      // Minimize templates to show recording area better
-      const { useEditorStore } = require('@/stores/editorStore');
       useEditorStore.getState().setTemplateSidebarMinimized(true);
     },
   },
@@ -62,11 +57,9 @@ export const tutorialSteps: TutorialStep[] = [
     id: 'auto-texts',
     targetSelector: '[data-tutorial="auto-texts"]',
     title: 'Textos Automáticos',
-    description: 'Esta aba apresenta os textos automáticos associados ao template selecionado. Os textos automáticos ajudam a acelerar a redação e são específicos de cada template.',
+    description: 'Esta é a aba de Textos Automáticos. Aqui surgem frases clínicas de apoio, específicas da template selecionada. Esta aba só aparece automaticamente depois do relatório ser gerado, para não distrair durante o ditado. No tutorial, estamos a mostrá-la antecipadamente para que conheça a funcionalidade.',
     position: 'left',
     onEnter: () => {
-      // Force show auto-texts panel (ensure isReportGenerated is false so it shows)
-      const { useEditorStore } = require('@/stores/editorStore');
       useEditorStore.getState().setIsReportGenerated(false);
     },
   },
@@ -74,15 +67,12 @@ export const tutorialSteps: TutorialStep[] = [
     id: 'verification',
     targetSelector: '[data-tutorial="verification-panel"]',
     title: 'Verificação de Erros e Incoerências',
-    description: 'Aqui pode verificar automaticamente incoerências clínicas no relatório, como lateralidade inconsistente ou contradições internas. Ao clicar em "Verificar", o relatório é analisado e eventuais problemas são listados.',
+    description: 'Aqui pode verificar automaticamente o relatório final, procurando erros e incoerências clínicas. Por exemplo: lateralidade trocada, níveis inconsistentes ou descrições contraditórias.',
     position: 'left',
     onEnter: () => {
-      // Force show verification panel
-      const { useEditorStore } = require('@/stores/editorStore');
       useEditorStore.getState().setIsReportGenerated(true);
     },
     onLeave: () => {
-      const { useEditorStore } = require('@/stores/editorStore');
       useEditorStore.getState().setIsReportGenerated(false);
     },
   },
@@ -127,7 +117,6 @@ interface TutorialState {
   isActive: boolean;
   currentStep: number;
   hasCompletedOnboarding: boolean;
-  /** Track previous isReportGenerated to restore after tutorial */
   _prevIsReportGenerated: boolean | null;
 
   startTutorial: () => void;
@@ -147,15 +136,8 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
   _prevIsReportGenerated: null,
 
   startTutorial: () => {
-    // Save current state before tutorial starts
-    try {
-      const { useEditorStore } = require('@/stores/editorStore');
-      const prevGenerated = useEditorStore.getState().isReportGenerated;
-      set({ _prevIsReportGenerated: prevGenerated });
-    } catch {}
-
-    set({ isActive: true, currentStep: 0 });
-    // Execute onEnter for step 0
+    const prevGenerated = useEditorStore.getState().isReportGenerated;
+    set({ _prevIsReportGenerated: prevGenerated, isActive: true, currentStep: 0 });
     const step = tutorialSteps[0];
     step?.onEnter?.();
   },
@@ -196,10 +178,7 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
 
     // Restore previous isReportGenerated state
     if (_prevIsReportGenerated !== null) {
-      try {
-        const { useEditorStore } = require('@/stores/editorStore');
-        useEditorStore.getState().setIsReportGenerated(_prevIsReportGenerated);
-      } catch {}
+      useEditorStore.getState().setIsReportGenerated(_prevIsReportGenerated);
     }
 
     set({ isActive: false, currentStep: 0, _prevIsReportGenerated: null });
@@ -225,7 +204,8 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
 
     if (!completed) {
       setTimeout(() => {
-        set({ isActive: true, currentStep: 0 });
+        const prevGenerated = useEditorStore.getState().isReportGenerated;
+        set({ _prevIsReportGenerated: prevGenerated, isActive: true, currentStep: 0 });
         const step = tutorialSteps[0];
         step?.onEnter?.();
       }, 1000);
