@@ -19,6 +19,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   const { toast } = useToast();
   const { 
     selectedTemplate, 
+    activeTemplates,
     setOriginalTranscription, 
     setReportContent,
     applyRulesToText,
@@ -127,11 +128,15 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       description: "O áudio está a ser enviado para processamento."
     });
 
+    // Collect autoTexts from all active templates
+    const autoTexts = activeTemplates.flatMap(t => t.autoTexts || []);
+
     await processWithN8n({
       audioBlob: currentBlob,
       templateType: selectedTemplate.name,
       templateText: selectedTemplate.baseText,
       reportStylePreferences,
+      autoTexts,
     });
   }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast, reportStylePreferences]);
 
