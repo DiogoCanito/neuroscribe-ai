@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editorStore';
+import { useTutorialStore } from '@/stores/tutorialStore';
 import { Zap, PanelRightClose, PanelRight } from 'lucide-react';
 
 export function ClinicalAutoText() {
   const { activeTemplates } = useEditorStore();
+  const tutorialActive = useTutorialStore((s) => s.isActive);
+  const tutorialStep = useTutorialStore((s) => s.currentStep);
   const [manuallyHidden, setManuallyHidden] = useState(false);
 
-  const shouldBeVisible = activeTemplates.length > 0 && !manuallyHidden;
+  // Force visible during the auto-texts tutorial step (id='auto-texts', index 5)
+  const isTutorialForcing = tutorialActive && tutorialStep === 5;
+  const shouldBeVisible = isTutorialForcing || (activeTemplates.length > 0 && !manuallyHidden);
 
   if (!shouldBeVisible) {
     if (activeTemplates.length > 0 && manuallyHidden) {
@@ -77,7 +82,13 @@ export function ClinicalAutoText() {
             );
           })}
 
-          {activeTemplates.every(t => (t.autoTexts || []).length === 0) && (
+          {activeTemplates.length === 0 && isTutorialForcing && (
+            <p className="text-xs text-muted-foreground px-1 py-6 text-center">
+              Selecione uma template para ver os textos automáticos associados.
+            </p>
+          )}
+
+          {activeTemplates.length > 0 && activeTemplates.every(t => (t.autoTexts || []).length === 0) && (
             <p className="text-xs text-muted-foreground px-1 py-6 text-center">
               Esta template ainda não tem textos automáticos configurados.
             </p>
