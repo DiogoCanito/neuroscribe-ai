@@ -86,8 +86,8 @@ export const tutorialSteps: TutorialStep[] = [
   {
     id: 'action-bar',
     targetSelector: '[data-tutorial="action-bar"]',
-    title: 'Barra de Ações do Relatório',
-    description: 'Aqui pode copiar o relatório, exportar em PDF, reprocessar o áudio ou limpar o conteúdo atual.',
+    title: 'Reprocessar e Limpar',
+    description: 'Estes botões permitem reprocessar o áudio com o template atual ou limpar todo o conteúdo do editor. As opções de Copiar e exportar PDF encontram-se na barra do editor, logo abaixo.',
     position: 'bottom',
   },
   {
