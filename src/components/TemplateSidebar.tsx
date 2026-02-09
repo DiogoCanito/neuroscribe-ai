@@ -8,6 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { TemplateEditDialog } from '@/components/TemplateEditDialog';
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  ContextMenuSeparator,
+} from '@/components/ui/context-menu';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -365,43 +372,65 @@ function ModalityItem({
 }: ModalityItemProps) {
   return (
     <div className="mb-0.5 group/modality">
-      <div className="flex items-center">
-        <button
-          onClick={onToggle}
-          className="flex-1 flex items-center gap-1.5 px-2 py-1 rounded text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-        >
-          {isExpanded ? (
-            <ChevronDown className="w-3 h-3 text-sidebar-foreground/60" />
-          ) : (
-            <ChevronRight className="w-3 h-3 text-sidebar-foreground/60" />
-          )}
-          {getIcon(modality.icon)}
-          <span className="font-medium text-[11px]">{modality.name}</span>
-        </button>
-        <div className="opacity-0 group-hover/modality:opacity-100 flex items-center pr-1 transition-opacity">
-          <button
-            onClick={(e) => onEditModality(modality, e)}
-            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
-            title="Editar"
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="flex items-center">
+            <button
+              onClick={onToggle}
+              className="flex-1 flex items-center gap-1.5 px-2 py-1 rounded text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3 h-3 text-sidebar-foreground/60" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-sidebar-foreground/60" />
+              )}
+              {getIcon(modality.icon)}
+              <span className="font-medium text-[11px]">{modality.name}</span>
+            </button>
+            <div className="opacity-0 group-hover/modality:opacity-100 flex items-center pr-1 transition-opacity">
+              <button
+                onClick={(e) => onEditModality(modality, e)}
+                className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                title="Editar"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+              </button>
+              <button
+                onClick={() => onAddRegion(modality.id)}
+                className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                title="Adicionar Região"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+              <button
+                onClick={(e) => onDeleteModality(modality, e)}
+                className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+                title="Eliminar"
+              >
+                <Trash2 className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-44">
+          <ContextMenuItem onClick={() => onAddRegion(modality.id)} className="gap-2 text-xs">
+            <Plus className="w-3.5 h-3.5" />
+            Adicionar Região
+          </ContextMenuItem>
+          <ContextMenuItem onClick={(e) => onEditModality(modality, e as unknown as React.MouseEvent)} className="gap-2 text-xs">
+            <Pencil className="w-3.5 h-3.5" />
+            Renomear Modalidade
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onClick={(e) => onDeleteModality(modality, e as unknown as React.MouseEvent)}
+            className="gap-2 text-xs text-destructive focus:text-destructive"
           >
-            <Pencil className="w-2.5 h-2.5" />
-          </button>
-          <button
-            onClick={() => onAddRegion(modality.id)}
-            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
-            title="Adicionar Região"
-          >
-            <Plus className="w-2.5 h-2.5" />
-          </button>
-          <button
-            onClick={(e) => onDeleteModality(modality, e)}
-            className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
-            title="Eliminar"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-          </button>
-        </div>
-      </div>
+            <Trash2 className="w-3.5 h-3.5" />
+            Apagar Modalidade
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
       
       {isExpanded && (
         <div className="ml-3 mt-0.5">
@@ -459,78 +488,119 @@ function RegionItem({
 }: RegionItemProps) {
   return (
     <div className="mb-0.5 group/region">
-      <div className="flex items-center">
-        <button
-          onClick={onToggle}
-          className="flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors"
-        >
-          {isExpanded ? (
-            <ChevronDown className="w-2.5 h-2.5 text-sidebar-foreground/50" />
-          ) : (
-            <ChevronRight className="w-2.5 h-2.5 text-sidebar-foreground/50" />
-          )}
-          <span className="text-[11px]">{region.name}</span>
-        </button>
-        <div className="opacity-0 group-hover/region:opacity-100 flex items-center pr-1 transition-opacity">
-          <button
-            onClick={(e) => onEditRegion(modalityId, region, e)}
-            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
-            title="Editar"
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="flex items-center">
+            <button
+              onClick={onToggle}
+              className="flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-sidebar-foreground/80 hover:bg-sidebar-accent transition-colors"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-2.5 h-2.5 text-sidebar-foreground/50" />
+              ) : (
+                <ChevronRight className="w-2.5 h-2.5 text-sidebar-foreground/50" />
+              )}
+              <span className="text-[11px]">{region.name}</span>
+            </button>
+            <div className="opacity-0 group-hover/region:opacity-100 flex items-center pr-1 transition-opacity">
+              <button
+                onClick={(e) => onEditRegion(modalityId, region, e)}
+                className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                title="Editar"
+              >
+                <Pencil className="w-2.5 h-2.5" />
+              </button>
+              <button
+                onClick={() => onAddTemplate(modalityId, region.id)}
+                className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                title="Adicionar Template"
+              >
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+              <button
+                onClick={(e) => onDeleteRegion(modalityId, region, e)}
+                className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+                title="Eliminar"
+              >
+                <Trash2 className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-44">
+          <ContextMenuItem onClick={() => onAddTemplate(modalityId, region.id)} className="gap-2 text-xs">
+            <Plus className="w-3.5 h-3.5" />
+            Adicionar Template
+          </ContextMenuItem>
+          <ContextMenuItem onClick={(e) => onEditRegion(modalityId, region, e as unknown as React.MouseEvent)} className="gap-2 text-xs">
+            <Pencil className="w-3.5 h-3.5" />
+            Renomear Região
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onClick={(e) => onDeleteRegion(modalityId, region, e as unknown as React.MouseEvent)}
+            className="gap-2 text-xs text-destructive focus:text-destructive"
+            disabled={region.templates.length > 0}
           >
-            <Pencil className="w-2.5 h-2.5" />
-          </button>
-          <button
-            onClick={() => onAddTemplate(modalityId, region.id)}
-            className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
-            title="Adicionar Template"
-          >
-            <Plus className="w-2.5 h-2.5" />
-          </button>
-          <button
-            onClick={(e) => onDeleteRegion(modalityId, region, e)}
-            className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
-            title="Eliminar"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-          </button>
-        </div>
-      </div>
+            <Trash2 className="w-3.5 h-3.5" />
+            Apagar Região
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
       
       {isExpanded && (
         <div className="ml-4 mt-0.5 space-y-0">
           {region.templates.map((template) => (
-            <div key={template.id} className="flex items-center group/template">
-              <button
-                onClick={() => onTemplateClick(template)}
-                className={cn(
-                  "flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-colors",
-                  selectedTemplateId === template.id
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : activeTemplateIds.includes(template.id)
-                    ? "bg-sidebar-primary/40 text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <FileText className="w-2.5 h-2.5" />
-                <span className="truncate">{template.name}</span>
-              </button>
-              <div className="opacity-0 group-hover/template:opacity-100 flex items-center pr-1 transition-opacity">
-                <button
-                  onClick={(e) => onEditTemplate(modalityId, region.id, template, e)}
-                  className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
-                  title="Editar"
+            <ContextMenu key={template.id}>
+              <ContextMenuTrigger asChild>
+                <div className="flex items-center group/template">
+                  <button
+                    onClick={() => onTemplateClick(template)}
+                    className={cn(
+                      "flex-1 flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-colors",
+                      selectedTemplateId === template.id
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                        : activeTemplateIds.includes(template.id)
+                        ? "bg-sidebar-primary/40 text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <FileText className="w-2.5 h-2.5" />
+                    <span className="truncate">{template.name}</span>
+                  </button>
+                  <div className="opacity-0 group-hover/template:opacity-100 flex items-center pr-1 transition-opacity">
+                    <button
+                      onClick={(e) => onEditTemplate(modalityId, region.id, template, e)}
+                      className="p-0.5 rounded hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                      title="Editar"
+                    >
+                      <Pencil className="w-2.5 h-2.5" />
+                    </button>
+                    <button
+                      onClick={(e) => onDeleteTemplate(modalityId, region.id, template, e)}
+                      className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="w-40">
+                <ContextMenuItem onClick={(e) => onEditTemplate(modalityId, region.id, template, e as unknown as React.MouseEvent)} className="gap-2 text-xs">
+                  <Pencil className="w-3.5 h-3.5" />
+                  Editar Template
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  onClick={(e) => onDeleteTemplate(modalityId, region.id, template, e as unknown as React.MouseEvent)}
+                  className="gap-2 text-xs text-destructive focus:text-destructive"
                 >
-                  <Pencil className="w-2.5 h-2.5" />
-                </button>
-                <button
-                  onClick={(e) => onDeleteTemplate(modalityId, region.id, template, e)}
-                  className="p-0.5 rounded hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive"
-                  title="Eliminar"
-                >
-                  <Trash2 className="w-2.5 h-2.5" />
-                </button>
-              </div>
-            </div>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Apagar Template
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           ))}
         </div>
       )}
