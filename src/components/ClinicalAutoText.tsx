@@ -5,10 +5,7 @@ import { useEditorStore } from '@/stores/editorStore';
 import { Zap, PanelRightClose, PanelRight } from 'lucide-react';
 
 export function ClinicalAutoText() {
-  const { 
-    activeTemplates,
-    customTerms,
-  } = useEditorStore();
+  const { activeTemplates } = useEditorStore();
   const [manuallyHidden, setManuallyHidden] = useState(false);
 
   const shouldBeVisible = activeTemplates.length > 0 && !manuallyHidden;
@@ -54,35 +51,17 @@ export function ClinicalAutoText() {
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-2.5 space-y-4">
-          {/* User's custom terms first */}
-          {customTerms.length > 0 && (
-            <div>
-              <p className="text-[10px] font-semibold text-primary uppercase tracking-wider px-1 mb-1.5">
-                Meus Textos
-              </p>
-              <div className="space-y-1.5">
-                {customTerms.map((term, index) => (
-                  <div
-                    key={`custom-${index}`}
-                    className="px-2 py-1.5 rounded-md border border-transparent"
-                  >
-                    <p className="text-xs text-foreground leading-relaxed">{term}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Texts grouped by active template */}
           {activeTemplates.map((template) => {
             const templateAutoTexts = template.autoTexts || [];
             if (templateAutoTexts.length === 0) return null;
 
             return (
               <div key={template.id}>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1.5">
-                  {template.name}
-                </p>
+                {activeTemplates.length > 1 && (
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-1.5">
+                    {template.name}
+                  </p>
+                )}
                 <div className="space-y-1.5">
                   {templateAutoTexts.map((item) => (
                     <div
@@ -98,9 +77,9 @@ export function ClinicalAutoText() {
             );
           })}
 
-          {activeTemplates.every(t => (t.autoTexts || []).length === 0) && customTerms.length === 0 && (
-            <p className="text-xs text-muted-foreground px-1 py-3 text-center">
-              Sem textos automáticos para {activeTemplates.length > 1 ? 'estas templates' : 'esta template'}.
+          {activeTemplates.every(t => (t.autoTexts || []).length === 0) && (
+            <p className="text-xs text-muted-foreground px-1 py-6 text-center">
+              Esta template ainda não tem textos automáticos configurados.
             </p>
           )}
         </div>
