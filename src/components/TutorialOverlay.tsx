@@ -104,7 +104,9 @@ export function TutorialOverlay() {
 
   useEffect(() => {
     if (isActive) {
-      calculatePositions();
+      // Delay to allow React to re-render after onEnter state changes
+      const timer = setTimeout(() => calculatePositions(), 150);
+      return () => clearTimeout(timer);
     }
   }, [currentStep, isActive, calculatePositions]);
 
