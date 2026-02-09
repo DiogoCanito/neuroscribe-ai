@@ -22,11 +22,17 @@ interface N8nResponse {
   };
 }
 
+interface AutoTextEntry {
+  keyword: string;
+  text: string;
+}
+
 interface ProcessAudioParams {
   audioBlob: Blob;
   templateType: string;
   templateText: string;
   reportStylePreferences?: string;
+  autoTexts?: AutoTextEntry[];
 }
 
 export function useN8nProcessor(options: N8nProcessorOptions = {}) {
@@ -76,6 +82,7 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
     templateType,
     templateText,
     reportStylePreferences,
+    autoTexts,
   }: ProcessAudioParams): Promise<string | null> => {
     setIsProcessing(true);
     setError(null);
@@ -94,7 +101,7 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
         audio_file: audioUrl 
       });
       
-      const payload: Record<string, string> = {
+      const payload: Record<string, unknown> = {
         template_type: templateType,
         template_text: templateText,
         audio_file: audioUrl,
@@ -103,6 +110,14 @@ export function useN8nProcessor(options: N8nProcessorOptions = {}) {
       // Only include style preferences if the user has set them
       if (reportStylePreferences?.trim()) {
         payload.report_style_preferences = reportStylePreferences.trim();
+      }
+      
+      // Include semantic autoTexts for AI-powered keyword expansion
+      if (autoTexts && autoTexts.length > 0) {
+        payload.auto_texts = autoTexts.map(at => ({
+          keyword: at.keyword,
+          text: at.text,
+        }));
       }
       
       const response = await fetch(N8N_WEBHOOK_URL, {

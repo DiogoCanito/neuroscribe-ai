@@ -20,7 +20,7 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { selectedTemplate, setOriginalTranscription, setReportContent, setAudioBlob, reportStylePreferences, setIsReportGenerated } = useEditorStore();
+  const { selectedTemplate, activeTemplates, setOriginalTranscription, setReportContent, setAudioBlob, reportStylePreferences, setIsReportGenerated } = useEditorStore();
 
   // n8n processor - handles all audio processing externally
   const { processWithN8n, isProcessing } = useN8nProcessor({
@@ -67,13 +67,16 @@ export function CompactAudioUpload({ onTranscriptionComplete }: CompactAudioUplo
     // Store the audio blob in the editor store so it can be saved with "Próximo Relatório"
     setAudioBlob(uploadedBlob);
 
+    // Collect autoTexts from all active templates
+    const autoTexts = activeTemplates.flatMap(t => t.autoTexts || []);
+
     // Send to n8n for processing (transcription + AI report generation)
-    // The onSuccess callback in useN8nProcessor will handle setting the report content
     const result = await processWithN8n({
       audioBlob: uploadedBlob,
       templateType: selectedTemplate.name,
       templateText: selectedTemplate.baseText,
       reportStylePreferences,
+      autoTexts,
     });
 
     if (result) {
