@@ -40,7 +40,7 @@ interface EditorState {
   showFindReplace: boolean;
   findText: string;
   replaceText: string;
-  highlightedText: string;
+  
   isTemplateSidebarMinimized: boolean;
   
   // Global rules and terms (persisted)
@@ -66,7 +66,7 @@ interface EditorState {
   setShowFindReplace: (show: boolean) => void;
   setFindText: (text: string) => void;
   setReplaceText: (text: string) => void;
-  setHighlightedText: (text: string) => void;
+  
   setTemplateSidebarMinimized: (minimized: boolean) => void;
   setReportStylePreferences: (prefs: string) => void;
   
@@ -110,7 +110,7 @@ export const useEditorStore = create<EditorState>()(
       showFindReplace: false,
       findText: '',
       replaceText: '',
-      highlightedText: '',
+      
       isTemplateSidebarMinimized: false,
       
       // Default rules
@@ -166,7 +166,7 @@ export const useEditorStore = create<EditorState>()(
       setShowFindReplace: (show) => set({ showFindReplace: show }),
       setFindText: (text) => set({ findText: text }),
       setReplaceText: (text) => set({ replaceText: text }),
-      setHighlightedText: (text) => set({ highlightedText: text }),
+      
       setTemplateSidebarMinimized: (minimized) => set({ isTemplateSidebarMinimized: minimized }),
       setReportStylePreferences: (prefs) => set({ reportStylePreferences: prefs }),
       
