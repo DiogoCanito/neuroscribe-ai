@@ -32,8 +32,3 @@ export interface TemplateModality {
   regions: TemplateRegion[];
 }
 
-export interface FrequentTerm {
-  id: string;
-  term: string;
-  category?: string;
-}

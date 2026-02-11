@@ -1,4 +1,4 @@
-import { TemplateModality, FrequentTerm } from '@/types/templates';
+import { TemplateModality } from '@/types/templates';
 
 export const templates: TemplateModality[] = [
   {
@@ -375,47 +375,6 @@ IMPRESSÃO:
   }
 ];
 
-export const frequentTerms: FrequentTerm[] = [
-  // Achados normais
-  { id: '1', term: 'Sem alterações significativas', category: 'Normal' },
-  { id: '2', term: 'Morfologia e sinal normais', category: 'Normal' },
-  { id: '3', term: 'Calibre normal', category: 'Normal' },
-  { id: '4', term: 'Pérvios bilateralmente', category: 'Normal' },
-  
-  // Discos
-  { id: '5', term: 'Protrusão discal posterior', category: 'Disco' },
-  { id: '6', term: 'Hérnia discal extrusão', category: 'Disco' },
-  { id: '7', term: 'Abaulamento discal difuso', category: 'Disco' },
-  { id: '8', term: 'Desidratação discal', category: 'Disco' },
-  
-  // Canal
-  { id: '9', term: 'Estenose do canal vertebral', category: 'Canal' },
-  { id: '10', term: 'Redução do calibre do canal', category: 'Canal' },
-  { id: '11', term: 'Compressão radicular', category: 'Canal' },
-  
-  // Medula
-  { id: '12', term: 'Mielopatia compressiva', category: 'Medula' },
-  { id: '13', term: 'Hipersinal medular em T2', category: 'Medula' },
-  
-  // Articulações
-  { id: '14', term: 'Derrame articular', category: 'Articulação' },
-  { id: '15', term: 'Sinovite', category: 'Articulação' },
-  { id: '16', term: 'Osteoartrose', category: 'Articulação' },
-  
-  // Tendões
-  { id: '17', term: 'Tendinopatia', category: 'Tendão' },
-  { id: '18', term: 'Rotura parcial', category: 'Tendão' },
-  { id: '19', term: 'Rotura completa', category: 'Tendão' },
-  
-  // Meniscos
-  { id: '20', term: 'Lesão meniscal', category: 'Menisco' },
-  { id: '21', term: 'Rotura meniscal', category: 'Menisco' },
-  
-  // Localização
-  { id: '22', term: 'Lado direito', category: 'Localização' },
-  { id: '23', term: 'Lado esquerdo', category: 'Localização' },
-  { id: '24', term: 'Bilateral', category: 'Localização' }
-];
 
 // Voice command patterns
 export const voiceCommands = {
