@@ -28,18 +28,27 @@ function AppContent() {
   const initializeForUser = useTemplateStore((state) => state.initializeForUser);
   const setReportStylePreferences = useEditorStore((state) => state.setReportStylePreferences);
   
-  const loadStylePreferences = async (userId: string) => {
+  const loadUserPreferences = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('report_style_preferences')
+        .select('report_style_preferences, dark_mode')
         .eq('user_id', userId)
         .single();
-      if (data && (data as any).report_style_preferences) {
-        setReportStylePreferences((data as any).report_style_preferences);
+      if (data) {
+        if ((data as any).report_style_preferences) {
+          setReportStylePreferences((data as any).report_style_preferences);
+        }
+        // Apply dark mode from DB
+        const darkMode = (data as any).dark_mode;
+        if (darkMode === true) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
     } catch (err) {
-      console.warn('Could not load style preferences:', err);
+      console.warn('Could not load user preferences:', err);
     }
   };
   
@@ -52,7 +61,7 @@ function AppContent() {
         // Defer Supabase calls to avoid deadlock
         setTimeout(() => {
           initializeForUser(session?.user?.id ?? null);
-          if (session?.user?.id) loadStylePreferences(session.user.id);
+          if (session?.user?.id) loadUserPreferences(session.user.id);
         }, 0);
       }
     );
@@ -61,7 +70,7 @@ function AppContent() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       initializeForUser(session?.user?.id ?? null);
-      if (session?.user?.id) loadStylePreferences(session.user.id);
+      if (session?.user?.id) loadUserPreferences(session.user.id);
       setLoading(false);
     });
 

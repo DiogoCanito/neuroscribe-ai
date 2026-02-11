@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft, Info } from 'lucide-react';
 import { StylePreferencesDialog } from '@/components/StylePreferencesDialog';
+import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
@@ -312,6 +313,8 @@ export default function ReportEditorPage() {
           <div data-tutorial="voice-commands">
             <VoiceCommandsToggle />
           </div>
+
+          <DarkModeToggle />
 
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1 h-7 text-xs px-2 text-muted-foreground hover:text-foreground">
             <LogOut className="w-3 h-3" />

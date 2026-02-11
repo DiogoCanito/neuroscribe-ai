@@ -207,6 +207,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          dark_mode: boolean
           full_name: string
           id: string
           report_style_preferences: string | null
@@ -217,6 +218,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dark_mode?: boolean
           full_name?: string
           id?: string
           report_style_preferences?: string | null
@@ -227,6 +229,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dark_mode?: boolean
           full_name?: string
           id?: string
           report_style_preferences?: string | null
