@@ -20,9 +20,14 @@ export type Database = {
           audio_url: string | null
           created_at: string
           id: string
+          processing_time_ms: number | null
           report_content: string
+          reprocess_count: number
           template_id: string | null
           template_name: string
+          used_dark_mode: boolean
+          used_verification: boolean
+          used_voice_commands: boolean
           user_id: string
         }
         Insert: {
@@ -30,9 +35,14 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           id?: string
+          processing_time_ms?: number | null
           report_content: string
+          reprocess_count?: number
           template_id?: string | null
           template_name: string
+          used_dark_mode?: boolean
+          used_verification?: boolean
+          used_voice_commands?: boolean
           user_id: string
         }
         Update: {
@@ -40,9 +50,14 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           id?: string
+          processing_time_ms?: number | null
           report_content?: string
+          reprocess_count?: number
           template_id?: string | null
           template_name?: string
+          used_dark_mode?: boolean
+          used_verification?: boolean
+          used_voice_commands?: boolean
           user_id?: string
         }
         Relationships: []
