@@ -6,6 +6,7 @@ import { ReportEditor } from '@/components/ReportEditor';
 import { VoiceCommandsToggle } from '@/components/VoiceCommandsToggle';
 import { CompactAudioUpload } from '@/components/CompactAudioUpload';
 import { CompletedReportsList } from '@/components/CompletedReportsList';
+import { ProfileTab } from '@/components/ProfileTab';
 import { ClinicalAutoText } from '@/components/ClinicalAutoText';
 import { ReportVerification } from '@/components/ReportVerification';
 import { TutorialOverlay } from '@/components/TutorialOverlay';
@@ -17,7 +18,7 @@ import { TemplateContent } from '@/types/templates';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft, Info } from 'lucide-react';
+import { FileText, RotateCcw, LogOut, Plus, FolderOpen, ArrowRight, Loader2, RefreshCw, PanelLeftClose, PanelLeft, Info, User } from 'lucide-react';
 import { StylePreferencesDialog } from '@/components/StylePreferencesDialog';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +46,7 @@ export default function ReportEditorPage() {
     reportStylePreferences,
     isReportGenerated,
     setIsReportGenerated,
+    voiceCommandsEnabled,
   } = useEditorStore();
 
   const { startTutorial, initializeForUser: initTutorial } = useTutorialStore();
@@ -212,6 +214,7 @@ export default function ReportEditorPage() {
       }
 
       // Save report to database
+      const isDark = document.documentElement.classList.contains('dark');
       const { error: insertError } = await supabase
         .from('completed_reports')
         .insert({
@@ -221,6 +224,9 @@ export default function ReportEditorPage() {
           report_content: reportContent,
           audio_url: audioPath,
           audio_duration: recordingDuration || null,
+          used_dark_mode: isDark,
+          used_voice_commands: voiceCommandsEnabled,
+          used_verification: isReportGenerated,
         });
 
       if (insertError) throw insertError;
@@ -281,11 +287,15 @@ export default function ReportEditorPage() {
           
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="h-7 p-0.5 bg-muted/50">
+              <TabsTrigger value="profile" className="h-6 text-xs px-2.5 gap-1">
+                <User className="w-3 h-3" />
+                Perfil
+              </TabsTrigger>
               <TabsTrigger value="new" className="h-6 text-xs px-2.5 gap-1">
                 <Plus className="w-3 h-3" />
                 Novos Relatórios
               </TabsTrigger>
-          <TabsTrigger value="history" className="h-6 text-xs px-2.5 gap-1" data-tutorial="completed-reports">
+              <TabsTrigger value="history" className="h-6 text-xs px-2.5 gap-1" data-tutorial="completed-reports">
                 <FolderOpen className="w-3 h-3" />
                 Relatórios
               </TabsTrigger>
@@ -324,7 +334,11 @@ export default function ReportEditorPage() {
       </header>
 
       {/* Tab Content */}
-      {activeTab === 'new' ? (
+      {activeTab === 'profile' ? (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ProfileTab />
+        </div>
+      ) : activeTab === 'new' ? (
         <div className="flex-1 flex min-h-0">
           {/* Template Sidebar - Collapsible */}
           <div
