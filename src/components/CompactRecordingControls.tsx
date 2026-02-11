@@ -1,9 +1,7 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useEditorStore } from '@/stores/editorStore';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useRealtimeTranscription } from '@/hooks/useRealtimeTranscription';
 import { useN8nProcessor } from '@/hooks/useN8nProcessor';
 import { subscribeToVoiceCommands } from '@/hooks/useVoiceCommands';
 import { Mic, Pause, Play, Square, Loader2, Send } from 'lucide-react';
@@ -21,13 +19,9 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     activeTemplates,
     setOriginalTranscription, 
     setReportContent,
-    applyRulesToText,
     reportStylePreferences,
     setIsReportGenerated,
   } = useEditorStore();
-  
-  const [liveTranscript, setLiveTranscript] = useState<string>('');
-  const accumulatedTranscriptRef = useRef<string>('');
   
   const audioRecorder = useAudioRecorder();
   const {
@@ -51,21 +45,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
     }
   });
 
-  const {
-    isConnecting,
-    partialTranscript,
-    connect,
-    disconnect,
-  } = useRealtimeTranscription({
-    onCommittedTranscript: (text) => {
-      const processedText = applyRulesToText(text);
-      accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + processedText;
-      setLiveTranscript(accumulatedTranscriptRef.current);
-      onTranscriptionUpdate(processedText);
-      setOriginalTranscription(accumulatedTranscriptRef.current);
-    }
-  });
-
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -73,21 +52,11 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
   };
 
   const handleStart = useCallback(async () => {
-    accumulatedTranscriptRef.current = '';
-    setLiveTranscript('');
     await startRecording();
-    // Realtime transcription for live preview only (n8n will do final transcription)
-    try {
-      await connect();
-    } catch (err) {
-      console.warn('Realtime transcription failed to connect:', err);
-    }
-  }, [startRecording, connect]);
+  }, [startRecording]);
 
   const handleStop = useCallback(async () => {
-    // Stop recording first - this triggers audioBlob to be set
     stopRecording();
-    disconnect();
 
     // Wait for audioBlob to be available (MediaRecorder.onstop is async)
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -112,13 +81,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       return;
     }
 
-    // Store live transcript as original transcription (for reference)
-    const liveText = accumulatedTranscriptRef.current || 
-      (partialTranscript ? applyRulesToText(partialTranscript) : '');
-    if (liveText) {
-      setOriginalTranscription(liveText);
-    }
-
     // Send to n8n for processing (transcription + AI report generation)
     toast({
       title: "A processar...",
@@ -135,7 +97,7 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       reportStylePreferences,
       autoTexts,
     });
-  }, [stopRecording, disconnect, partialTranscript, applyRulesToText, setOriginalTranscription, selectedTemplate, processWithN8n, audioRecorder, toast, reportStylePreferences]);
+  }, [stopRecording, selectedTemplate, processWithN8n, audioRecorder, toast, reportStylePreferences, activeTemplates]);
 
   // Subscribe to voice commands for recording control
   useEffect(() => {
@@ -196,15 +158,11 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
       {!isRecording && !isProcessing ? (
         <Button
           onClick={handleStart}
-          disabled={isConnecting || !selectedTemplate}
+          disabled={!selectedTemplate}
           size="sm"
           className="gap-1.5 h-7 text-xs"
         >
-          {isConnecting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Mic className="w-3.5 h-3.5" />
-          )}
+          <Mic className="w-3.5 h-3.5" />
           Gravar
         </Button>
       ) : isProcessing ? (
@@ -229,7 +187,6 @@ export function CompactRecordingControls({ onTranscriptionUpdate }: CompactRecor
           </Button>
         </>
       )}
-
     </div>
   );
 }
