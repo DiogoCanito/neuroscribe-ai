@@ -10,104 +10,106 @@
 
 @layer base {
   :root {
-    /* Core Medical Palette */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    /* Clinical Radiology Palette — PACS-inspired */
+    --background: 210 18% 97%;
+    --foreground: 215 20% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 215 20% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 215 20% 18%;
 
-    /* Medical Blue - Trust & Professionalism */
-    --primary: 210 65% 45%;
+    /* System Blue — solid, institutional, not saturated */
+    --primary: 212 55% 42%;
     --primary-foreground: 0 0% 100%;
 
     /* Soft Clinical Gray */
-    --secondary: 210 15% 94%;
-    --secondary-foreground: 215 25% 25%;
+    --secondary: 210 12% 93%;
+    --secondary-foreground: 215 20% 28%;
 
-    /* Muted Tones */
-    --muted: 210 15% 92%;
-    --muted-foreground: 215 15% 45%;
+    /* Muted Tones — low fatigue */
+    --muted: 210 10% 91%;
+    --muted-foreground: 215 12% 48%;
 
-    /* Accent - Medical Teal */
-    --accent: 175 50% 42%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent — subtle steel blue for active states */
+    --accent: 212 40% 90%;
+    --accent-foreground: 212 55% 32%;
 
-    /* Status Colors */
-    --destructive: 0 72% 51%;
+    /* 🔴 Destructive — critical errors & irreversible actions ONLY */
+    --destructive: 0 65% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 40%;
+    /* 🟢 Success — normal, concluded, stable */
+    --success: 152 45% 38%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* 🟡 Warning — review, attention, verify */
+    --warning: 42 75% 48%;
+    --warning-foreground: 42 80% 12%;
 
     /* Form Elements */
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 210 65% 45%;
+    --border: 210 14% 86%;
+    --input: 210 14% 86%;
+    --ring: 212 55% 42%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    /* Sidebar - Clinical Navigation */
-    --sidebar-background: 215 28% 17%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 175 50% 55%;
+    /* Sidebar — dark institutional panel */
+    --sidebar-background: 215 25% 16%;
+    --sidebar-foreground: 210 15% 90%;
+    --sidebar-primary: 212 55% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 25%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 215 25% 25%;
-    --sidebar-ring: 175 50% 55%;
+    --sidebar-accent: 215 22% 22%;
+    --sidebar-accent-foreground: 210 15% 90%;
+    --sidebar-border: 215 20% 22%;
+    --sidebar-ring: 212 55% 55%;
 
-    /* Custom Medical Variables */
-    --gradient-medical: linear-gradient(135deg, hsl(210 65% 45%), hsl(175 50% 42%));
-    --gradient-sidebar: linear-gradient(180deg, hsl(215 28% 17%), hsl(215 30% 12%));
-    --shadow-card: 0 1px 3px 0 hsl(215 25% 15% / 0.05), 0 1px 2px -1px hsl(215 25% 15% / 0.05);
-    --shadow-elevated: 0 4px 6px -1px hsl(215 25% 15% / 0.08), 0 2px 4px -2px hsl(215 25% 15% / 0.05);
-    --shadow-prominent: 0 10px 15px -3px hsl(215 25% 15% / 0.08), 0 4px 6px -4px hsl(215 25% 15% / 0.05);
+    /* Custom Variables */
+    --gradient-medical: linear-gradient(135deg, hsl(212 55% 42%), hsl(212 45% 52%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(215 25% 16%), hsl(215 28% 12%));
+    --shadow-card: 0 1px 3px 0 hsl(215 20% 18% / 0.04), 0 1px 2px -1px hsl(215 20% 18% / 0.03);
+    --shadow-elevated: 0 4px 6px -1px hsl(215 20% 18% / 0.06), 0 2px 4px -2px hsl(215 20% 18% / 0.04);
+    --shadow-prominent: 0 10px 15px -3px hsl(215 20% 18% / 0.07), 0 4px 6px -4px hsl(215 20% 18% / 0.04);
   }
 
   .dark {
-    --background: 215 30% 9%;
-    --foreground: 210 20% 95%;
+    --background: 215 22% 10%;
+    --foreground: 210 15% 93%;
 
-    --card: 215 28% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 215 22% 13%;
+    --card-foreground: 210 15% 93%;
 
-    --popover: 215 28% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 215 22% 13%;
+    --popover-foreground: 210 15% 93%;
 
-    --primary: 175 55% 50%;
-    --primary-foreground: 215 30% 9%;
+    --primary: 212 50% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 215 20% 18%;
+    --secondary-foreground: 210 15% 88%;
 
-    --muted: 215 25% 18%;
-    --muted-foreground: 210 15% 55%;
+    --muted: 215 18% 17%;
+    --muted-foreground: 210 10% 55%;
 
-    --accent: 175 50% 42%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 212 35% 22%;
+    --accent-foreground: 212 50% 75%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 0 58% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 20%;
-    --input: 215 25% 20%;
-    --ring: 175 55% 50%;
+    --border: 215 18% 20%;
+    --input: 215 18% 20%;
+    --ring: 212 50% 52%;
 
-    --sidebar-background: 215 30% 7%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 175 55% 50%;
-    --sidebar-primary-foreground: 215 30% 9%;
-    --sidebar-accent: 215 25% 15%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 215 25% 15%;
-    --sidebar-ring: 175 55% 50%;
+    --sidebar-background: 215 25% 8%;
+    --sidebar-foreground: 210 15% 88%;
+    --sidebar-primary: 212 50% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 20% 15%;
+    --sidebar-accent-foreground: 210 15% 88%;
+    --sidebar-border: 215 18% 15%;
+    --sidebar-ring: 212 50% 55%;
   }
 }
 
