@@ -77,11 +77,6 @@ export function ReportEditor({ onExportPDF }: ReportEditorProps) {
           Copiar
         </Button>
         
-        <Button variant="ghost" size="sm" onClick={onExportPDF} className="gap-1 h-6 text-[11px] px-2">
-          <FileDown className="w-3 h-3" />
-          PDF
-        </Button>
-
       </div>
 
       {/* Find & Replace Bar */}
